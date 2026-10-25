@@ -4,7 +4,7 @@ import PixelPulseRush from "@/components/PixelPulseRush";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Pixel Pulse Rush — Neon Chiptune Rhythm Game" },
+      { title: "Pixel Pulse Rush — Neon Arcade Rhythm Game" },
       {
         name: "description",
         content:
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "A neon 8-bit rhythm rush. Tap the lanes, build combos, share your score.",
+          "High-speed 4-lane retro arcade rhythm game featuring procedural chiptune audio synthesis and pure tactile mechanics.",
       },
     ],
   }),

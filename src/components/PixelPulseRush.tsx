@@ -2561,10 +2561,40 @@ export default function PixelPulseRush() {
         </div>
       </div>
 
-      {/* Main Game Stage Chassis */}
-      <div className="relative w-full max-w-[500px] flex-1 flex flex-col items-center justify-center min-h-0">
-        <div
-          ref={playSurfaceRef}
+      {/* Arcade Cabinet Arena (Center Highway + Stereo Wings) */}
+      <div className="relative w-full max-w-[840px] flex-1 flex items-center justify-center gap-3 sm:gap-4 min-h-0 px-2">
+        {/* Left Arcade Speaker Tower (Desktop) */}
+        <div className="hidden lg:flex flex-col items-center justify-between h-full max-h-[calc(100vh-140px)] w-14 py-3 px-2 rounded-2xl apple-glass border border-white/10 shadow-2xl shadow-black/60 select-none pointer-events-none">
+          <div className="text-[9px] font-mono font-bold text-glow-pink tracking-wider [writing-mode:vertical-lr] rotate-180">
+            STEREO L
+          </div>
+          <div className="flex flex-col-reverse gap-1.5 w-full items-center my-auto">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-7 h-1.5 rounded-full transition-all duration-100"
+                style={{
+                  background:
+                    i > 10
+                      ? "var(--neon-pink)"
+                      : i > 6
+                        ? "var(--neon-yellow)"
+                        : "var(--neon-cyan)",
+                  opacity: 0.2 + (Math.sin(i * 0.45) + 1) * 0.35,
+                  boxShadow: i > 9 ? "0 0 8px var(--neon-pink)" : "none",
+                }}
+              />
+            ))}
+          </div>
+          <div className="w-8 h-8 rounded-full border border-white/15 bg-black/40 flex items-center justify-center">
+            <span className="text-[10px] text-white/40 font-mono">24b</span>
+          </div>
+        </div>
+
+        {/* Central Game Stage Chassis */}
+        <div className="relative w-full max-w-[500px] h-full flex flex-col items-center justify-center min-h-0">
+          <div
+            ref={playSurfaceRef}
           tabIndex={0}
           role="application"
           aria-label="Pixel Pulse Rush play surface"
@@ -2902,85 +2932,22 @@ export default function PixelPulseRush() {
                   </button>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex flex-wrap gap-2 justify-center w-full mb-3">
+                {/* Pure Arcade Game Over Actions */}
+                <div className="flex flex-col gap-2 w-full mt-1 mb-2">
                   <button
-                    onClick={startGame}
-                    className="apple-interactive flex-1 font-apple font-bold text-xs py-2 px-3 rounded-xl bg-[var(--neon-pink)] text-black hover:brightness-110 shadow-md shadow-pink-500/20"
+                    onClick={() => { playUiSfx("start"); startGame(); }}
+                    className="apple-interactive w-full font-apple font-bold text-xs sm:text-sm py-3 px-4 rounded-xl bg-gradient-to-r from-[var(--neon-pink)] to-[#0066cc] text-white hover:brightness-110 shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    RETRY
+                    <RotateCcw className="w-4 h-4" />
+                    PLAY AGAIN
                   </button>
                   <button
-                    onClick={quitToMenu}
-                    className="apple-interactive flex-1 font-apple text-xs py-2 px-3 rounded-xl border border-white/20 text-white/80 hover:bg-white/10"
+                    onClick={() => { playUiSfx("click"); quitToMenu(); }}
+                    className="apple-interactive w-full font-apple font-semibold text-xs py-2.5 px-4 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 cursor-pointer"
                   >
-                    MENU
-                  </button>
-                  <button
-                    onClick={shareScore}
-                    className="apple-interactive flex-1 font-apple font-semibold text-xs py-2 px-3 rounded-xl bg-[var(--neon-cyan)] text-black hover:brightness-110"
-                  >
-                    SHARE
+                    CHANGE DIFFICULTY / LOBBY
                   </button>
                 </div>
-
-                <div className="flex gap-2 justify-center w-full">
-                  <button
-                    onClick={copyShareLink}
-                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg border border-white/20 text-white/70 hover:text-white"
-                  >
-                    COPY LINK
-                  </button>
-                  <button
-                    onClick={downloadCard}
-                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg bg-[var(--neon-yellow)] text-black font-semibold"
-                  >
-                    PNG
-                  </button>
-                  <button
-                    onClick={downloadCardPdf}
-                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg bg-[var(--neon-green)] text-black font-semibold"
-                  >
-                    PDF
-                  </button>
-                </div>
-
-                {socialLinks && (
-                  <div className="flex gap-2 justify-center text-[10px] font-mono mt-3">
-                    <a
-                      href={socialLinks.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
-                    >
-                      X
-                    </a>
-                    <a
-                      href={socialLinks.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
-                    >
-                      FB
-                    </a>
-                    <a
-                      href={socialLinks.reddit}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
-                    >
-                      REDDIT
-                    </a>
-                    <a
-                      href={socialLinks.whatsapp}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
-                    >
-                      WA
-                    </a>
-                  </div>
-                )}
                 <AdHint hint={interstitialHint} retry={debug.saveRetry} />
               </div>
             </Overlay>
@@ -3033,6 +3000,35 @@ export default function PixelPulseRush() {
               </span>
             </button>
           ))}
+        </div>
+        </div>
+
+        {/* Right Arcade Speaker Tower (Desktop) */}
+        <div className="hidden lg:flex flex-col items-center justify-between h-full max-h-[calc(100vh-140px)] w-14 py-3 px-2 rounded-2xl apple-glass border border-white/10 shadow-2xl shadow-black/60 select-none pointer-events-none">
+          <div className="text-[9px] font-mono font-bold text-glow-cyan tracking-wider [writing-mode:vertical-lr]">
+            STEREO R
+          </div>
+          <div className="flex flex-col-reverse gap-1.5 w-full items-center my-auto">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-7 h-1.5 rounded-full transition-all duration-100"
+                style={{
+                  background:
+                    i > 10
+                      ? "var(--neon-pink)"
+                      : i > 6
+                        ? "var(--neon-yellow)"
+                        : "var(--neon-green)",
+                  opacity: 0.2 + (Math.cos(i * 0.45) + 1) * 0.35,
+                  boxShadow: i > 9 ? "0 0 8px var(--neon-pink)" : "none",
+                }}
+              />
+            ))}
+          </div>
+          <div className="w-8 h-8 rounded-full border border-white/15 bg-black/40 flex items-center justify-center">
+            <span className="text-[10px] text-white/40 font-mono">96k</span>
+          </div>
         </div>
       </div>
 
