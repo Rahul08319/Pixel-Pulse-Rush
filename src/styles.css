@@ -78,9 +78,9 @@
   }
   body {
     background:
-      radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255, 62, 165, 0.12) 0%, transparent 65%),
-      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(34, 226, 255, 0.10) 0%, transparent 60%),
-      radial-gradient(circle at 20% 40%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255, 62, 165, 0.14) 0%, transparent 65%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(34, 226, 255, 0.12) 0%, transparent 60%),
+      radial-gradient(circle at 20% 40%, rgba(138, 43, 226, 0.10) 0%, transparent 50%),
       var(--color-background);
     background-attachment: fixed;
     color: var(--color-foreground);
@@ -109,30 +109,50 @@
 }
 
 @utility apple-glass-card {
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  background: rgba(24, 24, 28, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  border-radius: 1rem;
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  background: rgba(22, 22, 26, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  border-radius: 1.25rem;
 }
 
 @utility apple-glass-pill {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
 }
 
 @utility apple-glass-pill-active {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.28);
 }
 
 @utility apple-specular-edge {
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+}
+
+@utility apple-dynamic-island {
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility apple-glass-sheen {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 60%);
+  pointer-events: none;
+}
+
+@utility apple-vignette {
+  background: radial-gradient(ellipse at center, transparent 65%, rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
 }
 
 /* ============================================================
@@ -166,9 +186,9 @@
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 6px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.28);
   color: #ffffff;
   letter-spacing: -0.01em;
 }
@@ -176,19 +196,19 @@
 /* Neon Glow Utilities */
 @utility text-glow-pink {
   color: var(--neon-pink);
-  text-shadow: 0 0 10px rgba(255, 62, 165, 0.65), 0 0 24px rgba(255, 62, 165, 0.35);
+  text-shadow: 0 0 10px rgba(255, 62, 165, 0.75), 0 0 28px rgba(255, 62, 165, 0.45);
 }
 @utility text-glow-cyan {
   color: var(--neon-cyan);
-  text-shadow: 0 0 10px rgba(34, 226, 255, 0.65), 0 0 24px rgba(34, 226, 255, 0.35);
+  text-shadow: 0 0 10px rgba(34, 226, 255, 0.75), 0 0 28px rgba(34, 226, 255, 0.45);
 }
 @utility text-glow-yellow {
   color: var(--neon-yellow);
-  text-shadow: 0 0 10px rgba(255, 233, 74, 0.65), 0 0 24px rgba(255, 233, 74, 0.35);
+  text-shadow: 0 0 10px rgba(255, 233, 74, 0.75), 0 0 28px rgba(255, 233, 74, 0.45);
 }
 @utility text-glow-green {
   color: var(--neon-green);
-  text-shadow: 0 0 10px rgba(92, 255, 138, 0.65), 0 0 24px rgba(92, 255, 138, 0.35);
+  text-shadow: 0 0 10px rgba(92, 255, 138, 0.75), 0 0 28px rgba(92, 255, 138, 0.45);
 }
 
 @utility font-display {
@@ -217,8 +237,8 @@
     to bottom,
     transparent 0,
     transparent 2px,
-    rgba(0,0,0,0.12) 2px,
-    rgba(0,0,0,0.12) 4px
+    rgba(0,0,0,0.10) 2px,
+    rgba(0,0,0,0.10) 4px
   );
   mix-blend-mode: overlay;
   animation: scanlines 1.6s linear infinite;
@@ -233,4 +253,21 @@
 
 .apple-ambient-glow {
   animation: pulseGlow 4s ease-in-out infinite;
+}
+
+/* Shimmer animation for Apple buttons & badges */
+@keyframes shimmerPass {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.apple-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerPass 3s infinite linear;
 }

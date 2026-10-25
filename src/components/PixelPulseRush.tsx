@@ -44,6 +44,28 @@ const HIT_LINE_RATIO = 0.82;
 const NOTE_TRAVEL_MS = 1600;
 const MAX_MISSES = 3;
 
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+  sparkle: boolean;
+};
+
+type Ripple = {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  color: string;
+  alpha: number;
+};
+
 type Difficulty = "easy" | "normal" | "hard";
 
 type DifficultyConfig = {
@@ -601,6 +623,8 @@ export default function PixelPulseRush() {
   const judgementsRef = useRef<Judgement[]>([]);
   const pulseRef = useRef(0);
   const laneFlashRef = useRef<number[]>([0, 0, 0, 0]);
+  const particlesRef = useRef<Particle[]>([]);
+  const ripplesRef = useRef<Ripple[]>([]);
   const hitWindowRef = useRef(DIFFICULTIES.normal.hitWindow);
   const perfectWindowRef = useRef(DIFFICULTIES.normal.perfectWindow);
   const latencyOffsetRef = useRef(0);
@@ -1232,6 +1256,8 @@ export default function PixelPulseRush() {
     hitDeltasRef.current = [];
     consecutiveMissesRef.current = 0;
     laneDistributionRef.current = [0, 0, 0, 0];
+    particlesRef.current = [];
+    ripplesRef.current = [];
     perfectHitsRef.current = 0;
     greatHitsRef.current = 0;
     gameStartTimeRef.current = performance.now();
@@ -1336,10 +1362,93 @@ export default function PixelPulseRush() {
       comboRef.current++;
       if (comboRef.current > bestComboRef.current)
         bestComboRef.current = comboRef.current;
+
+      // Realistic 8K Combo Milestone Burst every 10 combo streak
+      if (comboRef.current > 0 && comboRef.current % 10 === 0) {
+        const cEl = canvasRef.current;
+        if (cEl) {
+          const cW = cEl.getBoundingClientRect().width;
+          const cH = cEl.getBoundingClientRect().height;
+          const laneAreaW = Math.min(cW, 520);
+          const laneAreaX = (cW - laneAreaW) / 2;
+          const laneW = laneAreaW / LANES;
+          const hitX = laneAreaX + lane * laneW + laneW / 2;
+          const hitY = cH * HIT_LINE_RATIO;
+          for (let p = 0; p < 28; p++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 3 + Math.random() * 6;
+            particlesRef.current.push({
+              x: hitX,
+              y: hitY,
+              vx: Math.cos(angle) * spd,
+              vy: Math.sin(angle) * spd - 2,
+              color: p % 2 === 0 ? "#ffe94a" : "#ff3ea5",
+              size: 3 + Math.random() * 3,
+              alpha: 1,
+              life: 0,
+              maxLife: 32,
+              sparkle: true,
+            });
+          }
+          judgementsRef.current.push({
+            text: `${comboRef.current} COMBO!`,
+            color: "#ffe94a",
+            at: performance.now(),
+          });
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            try {
+              navigator.vibrate?.([15, 30, 20]);
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+
       const perfect = bestDelta <= perfectWindowRef.current;
       const gain = (perfect ? 100 : 50) * (1 + Math.floor(comboRef.current / 10) * 0.5);
       scoreRef.current += Math.round(gain);
       pulseRef.current = 1;
+
+      // Realistic 8K Particle Physics & Shockwave Spawning
+      const canvasEl = canvasRef.current;
+      if (canvasEl) {
+        const W = canvasEl.getBoundingClientRect().width;
+        const H = canvasEl.getBoundingClientRect().height;
+        const laneAreaW = Math.min(W, 520);
+        const laneAreaX = (W - laneAreaW) / 2;
+        const laneW = laneAreaW / LANES;
+        const hitX = laneAreaX + lane * laneW + laneW / 2;
+        const hitY = H * HIT_LINE_RATIO;
+        const count = perfect ? 24 : 14;
+        const baseColor = LANE_COLORS[lane];
+
+        for (let p = 0; p < count; p++) {
+          const angle = (Math.PI * 2 * p) / count + (Math.random() - 0.5) * 0.4;
+          const speed = 2 + Math.random() * (perfect ? 5.5 : 3.5);
+          particlesRef.current.push({
+            x: hitX + (Math.random() - 0.5) * 18,
+            y: hitY + (Math.random() - 0.5) * 8,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - (perfect ? 2 : 1),
+            color: perfect && Math.random() > 0.4 ? "#ffffff" : baseColor,
+            size: 2.5 + Math.random() * (perfect ? 3.5 : 2.5),
+            alpha: 1,
+            life: 0,
+            maxLife: 22 + Math.floor(Math.random() * 16),
+            sparkle: Math.random() > 0.4,
+          });
+        }
+
+        ripplesRef.current.push({
+          x: hitX,
+          y: hitY,
+          radius: 10,
+          maxRadius: perfect ? 55 : 38,
+          color: baseColor,
+          alpha: 0.85,
+        });
+      }
 
       const signedDelta = (now - best.hitAt) * 1000 - offset;
       hitDeltasRef.current.push(signedDelta);
@@ -1368,6 +1477,32 @@ export default function PixelPulseRush() {
       comboRef.current = 0;
       consecutiveMissesRef.current++;
       hitDeltasRef.current.push(115);
+
+      const canvasEl = canvasRef.current;
+      if (canvasEl) {
+        const W = canvasEl.getBoundingClientRect().width;
+        const H = canvasEl.getBoundingClientRect().height;
+        const laneAreaW = Math.min(W, 520);
+        const laneAreaX = (W - laneAreaW) / 2;
+        const laneW = laneAreaW / LANES;
+        const hitX = laneAreaX + lane * laneW + laneW / 2;
+        const hitY = H * HIT_LINE_RATIO;
+        for (let p = 0; p < 8; p++) {
+          particlesRef.current.push({
+            x: hitX + (Math.random() - 0.5) * 20,
+            y: hitY,
+            vx: (Math.random() - 0.5) * 3,
+            vy: 1 + Math.random() * 3,
+            color: "#ff3ea5",
+            size: 2.2 + Math.random() * 2,
+            alpha: 0.85,
+            life: 0,
+            maxLife: 20,
+            sparkle: false,
+          });
+        }
+      }
+
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try {
           navigator.vibrate?.(32);
@@ -1542,29 +1677,46 @@ export default function PixelPulseRush() {
       const pulse = pulseRef.current;
       pulseRef.current *= 0.9;
 
-      ctx.fillStyle = `rgba(14, 8, 28, ${0.85 - pulse * 0.25})`;
+      // 1. Deep Space Canvas Background with Dynamic Audio Pulse
+      ctx.fillStyle = `rgba(10, 6, 22, ${0.88 - pulse * 0.2})`;
       ctx.fillRect(0, 0, W, H);
 
-      ctx.strokeStyle = `rgba(120, 60, 200, ${0.15 + pulse * 0.2})`;
+      // 2. Audio-Reactive Luminescent Aurora Wave
+      if (engine) {
+        engine.analyser.getByteFrequencyData(freqData);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let i = 0; i < 32; i++) {
+          const normX = (i / 31) * W;
+          const val = freqData[i] / 255;
+          const waveY = H - 35 - val * H * 0.38 - Math.sin(performance.now() * 0.002 + i * 0.28) * 10;
+          if (i === 0) ctx.lineTo(normX, waveY);
+          else {
+            const prevX = ((i - 1) / 31) * W;
+            const cpX = (prevX + normX) / 2;
+            ctx.quadraticCurveTo(cpX, waveY, normX, waveY);
+          }
+        }
+        ctx.lineTo(W, H);
+        ctx.closePath();
+        const gradAurora = ctx.createLinearGradient(0, H - 260, 0, H);
+        gradAurora.addColorStop(0, "rgba(255, 62, 165, 0.22)");
+        gradAurora.addColorStop(0.5, "rgba(34, 226, 255, 0.16)");
+        gradAurora.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = gradAurora;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 3. Subtle Cybernetic Perspective Grid
+      ctx.strokeStyle = `rgba(120, 60, 220, ${0.12 + pulse * 0.18})`;
       ctx.lineWidth = 1;
-      for (let y = 0; y < H; y += 24) {
+      for (let y = 0; y < H; y += 28) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(W, y);
         ctx.stroke();
-      }
-
-      if (engine) {
-        engine.analyser.getByteFrequencyData(freqData);
-        const bars = 32;
-        const bw = W / bars;
-        for (let i = 0; i < bars; i++) {
-          const v = freqData[i] / 255;
-          const h = v * H * 0.5;
-          const hue = (i / bars) * 60 + 280;
-          ctx.fillStyle = `hsla(${hue}, 90%, 60%, 0.35)`;
-          ctx.fillRect(i * bw, H - h, bw - 2, h);
-        }
       }
 
       const laneAreaW = Math.min(W, 520);
@@ -1572,32 +1724,73 @@ export default function PixelPulseRush() {
       const laneW = laneAreaW / LANES;
       const hitY = H * HIT_LINE_RATIO;
 
+      // 4. Lanes with Glossy Frosted Rail Highlights
       for (let i = 0; i < LANES; i++) {
         const x = laneAreaX + i * laneW;
         const flash = laneFlashRef.current[i];
-        laneFlashRef.current[i] *= 0.85;
-        ctx.fillStyle = `rgba(255,255,255,${0.02 + flash * 0.08})`;
+        laneFlashRef.current[i] *= 0.86;
+        ctx.fillStyle = `rgba(255,255,255,${0.015 + flash * 0.12})`;
         ctx.fillRect(x, 0, laneW - 2, H);
-        ctx.strokeStyle = `rgba(255,255,255,${0.08 + flash * 0.3})`;
+        ctx.strokeStyle = `rgba(255,255,255,${0.06 + flash * 0.35})`;
         ctx.strokeRect(x, 0, laneW - 2, H);
       }
 
-      ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 + pulse * 0.4})`;
-      ctx.lineWidth = 2;
+      // 5. Laser Voltage Beam Hitline (Multi-pass glow)
+      ctx.save();
+      // Ambient soft laser aura
+      ctx.strokeStyle = `rgba(34, 226, 255, ${0.25 + pulse * 0.35})`;
+      ctx.lineWidth = 10;
       ctx.beginPath();
       ctx.moveTo(laneAreaX, hitY);
       ctx.lineTo(laneAreaX + laneAreaW, hitY);
       ctx.stroke();
 
+      // Electric beam
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.75 + pulse * 0.25})`;
+      ctx.shadowColor = "#22e2ff";
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(laneAreaX, hitY);
+      ctx.lineTo(laneAreaX + laneAreaW, hitY);
+      ctx.stroke();
+
+      // Sharp white core
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(laneAreaX, hitY);
+      ctx.lineTo(laneAreaX + laneAreaW, hitY);
+      ctx.stroke();
+      ctx.restore();
+
+      // 6. Interactive Diamond Target Receptors at Hitline
       for (let i = 0; i < LANES; i++) {
         const x = laneAreaX + i * laneW;
         const flash = laneFlashRef.current[i];
+        const targetW = laneW - 14;
+        const targetH = 14 + flash * 6;
+        ctx.save();
         ctx.fillStyle = LANE_COLORS[i];
-        ctx.globalAlpha = 0.15 + flash * 0.7;
-        ctx.fillRect(x + 4, hitY - 6, laneW - 10, 12);
-        ctx.globalAlpha = 1;
+        ctx.shadowColor = LANE_COLORS[i];
+        ctx.shadowBlur = 10 + flash * 24;
+        ctx.globalAlpha = 0.28 + flash * 0.72;
+        ctx.beginPath();
+        ctx.roundRect(x + 7, hitY - targetH / 2, targetW, targetH, 7);
+        ctx.fill();
+
+        if (flash > 0.08) {
+          ctx.fillStyle = "#ffffff";
+          ctx.globalAlpha = flash * 0.95;
+          ctx.beginPath();
+          ctx.roundRect(x + 12, hitY - 3, targetW - 10, 6, 3);
+          ctx.fill();
+        }
+        ctx.restore();
       }
 
+      // 7. Realistic 8K 3D Rounded Note Capsules
       if (engine && stateRef.current === "playing") {
         const now = engine.ctx.currentTime;
         for (const n of notesRef.current) {
@@ -1607,14 +1800,39 @@ export default function PixelPulseRush() {
           const y = t * hitY;
           const x = laneAreaX + n.lane * laneW + 6;
           const w = laneW - 14;
-          const h = 22;
-          ctx.fillStyle = LANE_COLORS[n.lane];
-          ctx.shadowColor = LANE_COLORS[n.lane];
-          ctx.shadowBlur = 18;
-          ctx.fillRect(x, y - h / 2, w, h);
+          const h = 26;
+          const r = 8;
+          const color = LANE_COLORS[n.lane];
+
+          ctx.save();
+          // Dynamic Neon Bloom
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 18 + Math.sin(now * 8) * 4;
+
+          // 3D Cylindrical Vertical Gradient
+          const grad = ctx.createLinearGradient(x, y - h / 2, x, y + h / 2);
+          grad.addColorStop(0, "#ffffff");
+          grad.addColorStop(0.22, color);
+          grad.addColorStop(0.85, color);
+          grad.addColorStop(1, "rgba(0, 0, 0, 0.45)");
+          ctx.fillStyle = grad;
+
+          // Capsule Body
+          ctx.beginPath();
+          ctx.roundRect(x, y - h / 2, w, h, r);
+          ctx.fill();
+
+          // Glossy Glass Specular Sheen
           ctx.shadowBlur = 0;
-          ctx.fillStyle = "rgba(255,255,255,0.35)";
-          ctx.fillRect(x + 4, y - h / 2 + 4, w - 8, 3);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+          ctx.beginPath();
+          ctx.roundRect(x + 4, y - h / 2 + 3, w - 8, 4, 2);
+          ctx.fill();
+
+          // High-Energy Core
+          ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.fillRect(x + w / 2 - 8, y - 1.5, 16, 3);
+          ctx.restore();
 
           if ((now - n.hitAt) * 1000 > hitWindowRef.current + latencyOffsetRef.current) {
             n.judged = true;
@@ -1638,14 +1856,64 @@ export default function PixelPulseRush() {
         );
       }
 
+      // 8. Render Luminous Shockwave Ripples
+      for (let i = ripplesRef.current.length - 1; i >= 0; i--) {
+        const rip = ripplesRef.current[i];
+        rip.radius += 2.4;
+        rip.alpha *= 0.92;
+        if (rip.alpha < 0.02 || rip.radius >= rip.maxRadius) {
+          ripplesRef.current.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.strokeStyle = rip.color;
+        ctx.shadowColor = rip.color;
+        ctx.shadowBlur = 14;
+        ctx.globalAlpha = rip.alpha;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(rip.x, rip.y, rip.radius, rip.radius * 0.45, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 9. Render Physical Glowing Particle Sparks
+      for (let i = particlesRef.current.length - 1; i >= 0; i--) {
+        const p = particlesRef.current[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.14; // gentle gravity
+        p.vx *= 0.97;
+        p.vy *= 0.97;
+        p.life++;
+        p.alpha = 1 - p.life / p.maxLife;
+
+        if (p.life >= p.maxLife || p.alpha <= 0.01) {
+          particlesRef.current.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = p.sparkle ? 14 : 6;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 10. Keycap Labels at Lanes
       ctx.font = "12px 'VT323', monospace";
       ctx.textAlign = "center";
       for (let i = 0; i < LANES; i++) {
         const x = laneAreaX + i * laneW + laneW / 2;
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.fillText(LANE_KEYS[i].toUpperCase(), x, hitY + 26);
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
+        ctx.fillText(LANE_KEYS[i].toUpperCase(), x, hitY + 28);
       }
 
+      // 11. Judgements with Elevated Neon Glow
       const nowMs = performance.now();
       judgementsRef.current = judgementsRef.current.filter(
         (j) => nowMs - j.at < 600,
@@ -1653,14 +1921,14 @@ export default function PixelPulseRush() {
       ctx.textAlign = "center";
       for (const j of judgementsRef.current) {
         const age = (nowMs - j.at) / 600;
+        ctx.save();
         ctx.globalAlpha = 1 - age;
         ctx.font = "18px 'Press Start 2P', monospace";
         ctx.fillStyle = j.color;
         ctx.shadowColor = j.color;
-        ctx.shadowBlur = 12;
-        ctx.fillText(j.text, W / 2, hitY - 40 - age * 30);
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 16;
+        ctx.fillText(j.text, W / 2, hitY - 42 - age * 35);
+        ctx.restore();
       }
 
       setHud((h) =>
@@ -2192,8 +2460,48 @@ export default function PixelPulseRush() {
           role="application"
           aria-label="Pixel Pulse Rush play surface"
           style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
-          className="relative w-full aspect-[9/16] rounded-3xl overflow-hidden border border-white/15 scanlines shadow-[0_20px_50px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.25)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[#2997ff]"
+          className="relative w-full aspect-[9/16] rounded-3xl overflow-hidden border border-white/18 scanlines shadow-[0_25px_60px_-10px_rgba(0,0,0,0.95),inset_0_1px_0_0_rgba(255,255,255,0.3)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[#2997ff]"
         >
+          {/* Realistic 8K Curved Arcade Glass Sheen & Vignette */}
+          <div className="apple-glass-sheen absolute inset-0 z-10 pointer-events-none" />
+          <div className="apple-vignette absolute inset-0 z-10 pointer-events-none" />
+
+          {/* Apple Dynamic Island (Adaptive Floating Top HUD) */}
+          <div
+            onClick={() => setNeuralDrawerOpen(true)}
+            className="apple-dynamic-island absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 flex items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 text-white shadow-xl"
+            title="TypeSafe AI Dynamic Island · Tap to inspect"
+          >
+            {/* Live Audio Visualizer Waveform Dots */}
+            <div className="flex items-center gap-0.5 h-3">
+              <span className="w-0.5 h-full bg-[#ff3ea5] rounded-full animate-pulse" />
+              <span className="w-0.5 h-2 bg-[#22e2ff] rounded-full animate-pulse delay-75" />
+              <span className="w-0.5 h-3 bg-[#ffe94a] rounded-full animate-pulse delay-150" />
+              <span className="w-0.5 h-1.5 bg-[#5cff8a] rounded-full animate-pulse delay-100" />
+            </div>
+
+            <div className="text-[10px] font-apple font-semibold tracking-tight flex items-center gap-1.5">
+              <span className="text-[#2997ff]">
+                {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "Locked-In"}
+              </span>
+              <span className="text-white/40">·</span>
+              <span className="text-glow-yellow font-mono">{hud.score}</span>
+              {hud.combo > 5 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-pink-500/25 border border-pink-400/40 text-[9px] font-bold text-glow-pink animate-pulse">
+                  {hud.combo}x
+                </span>
+              )}
+              {state === "playing" && typeSafeReport?.derivedAdjustments?.statusBadge && (
+                <>
+                  <span className="text-white/40">·</span>
+                  <span className="text-[9px] text-[#5cff8a] font-mono tracking-tight font-medium">
+                    {typeSafeReport.derivedAdjustments.statusBadge}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
           <canvas
             ref={canvasRef}
             className="w-full h-full block touch-none select-none pointer-events-none"
@@ -2242,13 +2550,7 @@ export default function PixelPulseRush() {
             ))}
           </div>
 
-          {/* TypeSafe Live Telemetry Pill during play */}
-          {state === "playing" && typeSafeReport && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 apple-glass-pill px-3 py-1 rounded-full text-[9px] font-mono text-white/90 border border-white/15 flex items-center gap-1.5 pointer-events-none shadow-sm animate-in fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
-              <span>{typeSafeReport.derivedAdjustments.statusBadge}</span>
-            </div>
-          )}
+
 
           {/* Pause button during play */}
           {state === "playing" && (
@@ -2664,7 +2966,7 @@ export default function PixelPulseRush() {
 
 function Overlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/60 backdrop-blur-sm px-4 z-10 overflow-y-auto py-6">
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/65 backdrop-blur-md px-4 z-10 overflow-y-auto py-6 animate-in fade-in zoom-in-[0.98] duration-200">
       {children}
     </div>
   );

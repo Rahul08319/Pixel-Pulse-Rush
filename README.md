@@ -1,7 +1,7 @@
 <div align="center">
 
 # ⚡ PIXEL PULSE RUSH
-### *Neon 8-Bit Chiptune Rhythm Game × Apple Liquid Glass × TypeSafe™ System One AI*
+### *Neon 8-Bit Chiptune Rhythm Game × Apple Liquid Glass × TypeSafe™ System One AI × 8K Realistic Visuals*
 
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -9,14 +9,15 @@
 [![TanStack Router](https://img.shields.io/badge/TanStack_Router-v1.170-FF4154?style=for-the-badge&logo=tanstack&logoColor=white)](https://tanstack.com/router)
 [![Apple Design](https://img.shields.io/badge/Apple_Design-Liquid_Glass-0071E3?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/design/)
 [![TypeSafe AI](https://img.shields.io/badge/TypeSafe™_AI-System_One_Jev-8A2BE2?style=for-the-badge)](https://typesafe.ai)
+[![8K Realistic Graphics](https://img.shields.io/badge/VFX-8K_Realistic_Bloom-FF007F?style=for-the-badge)](https://github.com/Rahul08319/Pixel-Pulse-Rush)
 
 <br/>
 
 <p align="center">
-  <b>Pixel Pulse Rush</b> is a high-speed, 4-lane neon rhythm game featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, fluid spring micro-interactions, beat timing drift correction, cloud reliability telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
+  <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane rhythm game featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, an adaptive <b>Dynamic Island floating HUD</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
 </p>
 
-[🎮 Live Experience](#-gameplay--controls) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
+[🎮 Live Experience](#-gameplay--controls) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
 
 ---
 
@@ -26,14 +27,77 @@
 
 ## 🌟 Highlights
 
-- **💎 Apple Liquid Glass Aesthetic**: Multi-layered frosted glass vibrancy (`backdrop-blur-28px saturate-190%`), specular edge reflections, and restrained two-layer functional hierarchy conforming to Apple HIG.
-- **⚡ Fluid Physical Motion**: Zero-latency pointer-down response (`scale(0.97)` active states), interruptible transitions, Apple-style segmented difficulty controls, and haptic Taptic feedback.
+- **💎 Apple Liquid Glass Aesthetic**: Multi-layered frosted glass vibrancy (`backdrop-blur-32px saturate-200%`), specular edge reflections, and restrained two-layer functional hierarchy conforming to Apple HIG.
+- **🏝️ Apple Dynamic Island HUD**: Adaptive floating pill at the top of the arcade chassis—housing animated 4-band audio waveform dots, real-time score counter, combo badges, and live morphing TypeSafe telemetry badges.
+- **🌌 8K Ultra-Realistic Canvas Graphics**: Multi-pass bloom, 3D cylindrical note capsules with glass specular sheens, physical spark explosions with micro-gravity, shockwave ripples, and an electric laser voltage hitline.
+- **⚡ Fluid Physical Motion**: Zero-latency pointer-down response, active-state compression (`active:scale-[0.97]`), interruptible modal transitions, iOS segmented difficulty controls, and haptic Taptic feedback.
 - **🧠 TypeSafe™ System One Intelligence**: Programmable common sense running over player telemetry streams—featuring `Score`, `Noul`, and `Choice` primitives for jitter analysis, panic detection, flow state scoring, and dynamic audio/difficulty routing.
 - **⏱️ Beat Timing Drift Correction**: Zero-jitter timeline reconciliation after short or long pauses—prevents note desync and false flatlines when resuming.
-- **📊 Cross-Session Cloud Save Analytics**: Full instrumentation of retry attempts, backoff timings, payload sizes, and failure reasons stored across sessions.
+- **📊 Cross-Session Cloud Save Analytics**: Full instrumentation of retry attempts, full-jitter backoff delays, payload sizes, and failure reasons stored across sessions.
 - **📋 One-Tap Debug State Export**: Instant JSON snapshot export of retry queues, analytics logs, and runtime diagnostics to the system clipboard.
 - **🔄 YouTube & Visibility Coordination**: Symmetrical state machine coordinating `document.visibilitychange` with YouTube Playables `system.onPause` / `system.onResume`.
 - **🎹 100% Procedural Web Audio Engine**: Every run generates a unique chiptune melody and harmony across square, triangle, and noise oscillator channels with real-time FFT frequency visualization.
+
+---
+
+## 🌌 8K Ultra-Realistic Graphics Engine & VFX
+
+Pixel Pulse Rush renders all gameplay elements onto a high-DPI hardware-accelerated 2D canvas with multi-pass post-processing and physics simulation:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               APPLE DYNAMIC ISLAND (TOP HUD)                │
+│    [ ılıl Waveform ]  Locked-In · 12,850 · 24x COMBO        │
+├─────────────────────────────────────────────────────────────┤
+│  LANE 1 (Pink) │ LANE 2 (Cyan) │ LANE 3 (Yellow)│LANE 4(Grn)│
+│                │               │                │           │
+│   ╭────────╮   │               │                │           │
+│   │ 3D NOTE│ ◄─┼─ Cylindrical Gradient + Specular Glass Sheen│
+│   ╰────────╯   │               │   ╭────────╮   │           │
+│                │               │   │ 3D NOTE│   │           │
+│   ✦ * ˚ ✦      │               │   ╰────────╯   │           │
+│ (Embers/Sparks)│               │                │           │
+├────────────────┴───────────────┴────────────────┴───────────┤
+│ ═══════════════ LASER VOLTAGE HITLINE ══════════════════════│
+│    [ 10px Soft Aura ] + [ 3px Beam ] + [ 1px Razor Core ]    │
+│            ◎ Shockwave Luminous Expanding Ripples            │
+├─────────────────────────────────────────────────────────────┤
+│  ▲ Audio-Reactive Luminescent Aurora Waveform (FFT Bins)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1. 3D Cylindrical Note Capsules
+- Notes are drawn using native `ctx.roundRect` capsules with dynamic lighting gradients:
+  - Top edge highlight (`#ffffff`) reflecting arcade overhead illumination.
+  - Saturated neon body core with color-matched multi-octave glow (`shadowBlur: 18px`).
+  - Specular glass pill sheen (`rgba(255, 255, 255, 0.72)`) across the upper hemisphere.
+  - High-energy central filament.
+
+### 2. Multi-Pass Laser Voltage Hitline
+- Symmetrical triple-layer compositing:
+  1. **10px Ambient Aura**: Low-opacity cyan diffuse glow creating atmospheric luminescence.
+  2. **3px High-Voltage Beam**: Saturated electric core with audio-reactive pulse breathing.
+  3. **1px Sharp Center**: Pure `#ffffff` razor line for zero-ambiguity rhythm accuracy.
+- **Receptor Targets**: Diamond rounded bezels at each lane receptor that flash white and expand on accurate hits.
+
+### 3. Physical Particle Spark Physics
+- Each tap spawns 14 to 28 discrete particle sparks:
+  - **Velocity Decay**: Air resistance damping at `0.97` per frame.
+  - **Micro-Gravity**: Natural gravitational arc (`vy += 0.14`).
+  - **Sparkle Twinkle**: Random high-frequency alpha pulsing on peak velocities.
+  - **Miss Embers**: Dropping crimson embers when notes are missed or lanes mis-tapped.
+  - **10x Milestone Bursts**: 28-spark gold and pink firework bursts with tri-cadence haptic pulses.
+
+### 4. Audio-Reactive Luminescent Aurora Wave
+- Real-time 32-band FFT frequency analyzer powers a smooth bottom aurora wave:
+  - Quadratic Bézier spline interpolation across all 32 frequency bins.
+  - Vertical height modulated dynamically by chiptune bass and lead frequencies.
+  - Gradient transition from neon pink to cyan into deep cosmic violet.
+
+### 5. Curved Arcade CRT Glass Sheen & Vignette
+- Dual CSS overlay layers on the play surface:
+  - `.apple-glass-sheen`: 135-degree diagonal glossy specular reflection.
+  - `.apple-vignette`: Radial edge compression simulating physical curved glass.
 
 ---
 
@@ -138,7 +202,7 @@ A unified state machine coordinates browser tab changes with YouTube Playables l
 | **Lane 4** | <kbd>K</kbd> | Tap Lane 4 (Green) | Hit rightmost cascade notes |
 | **Start / Restart** | <kbd>SPACE</kbd> | Press Start Button | Launch procedural track run |
 | **Pause / Resume** | <kbd>ESC</kbd> or <kbd>P</kbd> | Tap Pause Button | Toggle game pause |
-| **AI Inspector** | Tap Neural Pill | Tap Neural Pill | Open TypeSafe System One Inspector |
+| **Dynamic Island** | Tap Top Pill | Tap Top Pill | Open TypeSafe System One Inspector |
 | **Debug Overlay** | <kbd>`</kbd> (Backtick) | `?debug=1` parameter | Diagnostics, cloud queue, JSON export & FPS metrics |
 
 ### Hardware Audio Calibration
@@ -163,7 +227,7 @@ Pixel-Pulse-Rush/
 ├── public/                         # Static assets & icons
 ├── src/
 │   ├── components/
-│   │   ├── PixelPulseRush.tsx              # Main game engine, canvas render loop, pause coordination & Apple UI
+│   │   ├── PixelPulseRush.tsx              # Main game engine, 8K canvas render loop, pause coordination & Apple UI
 │   │   ├── TypeSafeNeuralInspector.tsx     # Liquid Glass TypeSafe System One modal
 │   │   └── ui/                             # Reusable Radix & Tailwind components
 │   ├── lib/
