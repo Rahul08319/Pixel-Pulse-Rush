@@ -2522,21 +2522,16 @@ export default function PixelPulseRush() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* TypeSafe Neural Engine Pill */}
-          <button
-            onClick={() => {
-              playUiSfx("click");
-              setNeuralDrawerOpen(true);
-            }}
-            className="apple-interactive flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-[#2997ff] text-[10px] font-semibold"
-            title="Open TypeSafe System One Neural Rhythm Inspector"
-          >
-            <Brain className="w-3.5 h-3.5 animate-pulse text-[#2997ff]" />
-            <span className="hidden xs:inline">
-              {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "AI Router"}
-            </span>
-          </button>
+        <div className="flex items-center gap-2">
+          {/* Live Score & Combo during gameplay */}
+          {state === "playing" && (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 border border-white/12 font-mono text-xs shadow-sm">
+              <span className="text-glow-yellow font-bold">SCORE {hud.score}</span>
+              {hud.combo > 1 && (
+                <span className="text-glow-pink font-bold">{hud.combo}x</span>
+              )}
+            </div>
+          )}
 
           {/* Fullscreen Toggle Button */}
           <button
@@ -2580,41 +2575,7 @@ export default function PixelPulseRush() {
           <div className="apple-glass-sheen absolute inset-0 z-10 pointer-events-none" />
           <div className="apple-vignette absolute inset-0 z-10 pointer-events-none" />
 
-          {/* Apple Dynamic Island (Adaptive Floating Top HUD) */}
-          <div
-            onClick={() => setNeuralDrawerOpen(true)}
-            className="apple-dynamic-island absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 flex items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 text-white shadow-xl"
-            title="TypeSafe AI Dynamic Island · Tap to inspect"
-          >
-            {/* Live Audio Visualizer Waveform Dots */}
-            <div className="flex items-center gap-0.5 h-3">
-              <span className="w-0.5 h-full bg-[#ff3ea5] rounded-full animate-pulse" />
-              <span className="w-0.5 h-2 bg-[#22e2ff] rounded-full animate-pulse delay-75" />
-              <span className="w-0.5 h-3 bg-[#ffe94a] rounded-full animate-pulse delay-150" />
-              <span className="w-0.5 h-1.5 bg-[#5cff8a] rounded-full animate-pulse delay-100" />
-            </div>
 
-            <div className="text-[10px] font-apple font-semibold tracking-tight flex items-center gap-1.5">
-              <span className="text-[#2997ff]">
-                {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "Locked-In"}
-              </span>
-              <span className="text-white/40">·</span>
-              <span className="text-glow-yellow font-mono">{hud.score}</span>
-              {hud.combo > 5 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-pink-500/25 border border-pink-400/40 text-[9px] font-bold text-glow-pink animate-pulse">
-                  {hud.combo}x
-                </span>
-              )}
-              {state === "playing" && typeSafeReport?.derivedAdjustments?.statusBadge && (
-                <>
-                  <span className="text-white/40">·</span>
-                  <span className="text-[9px] text-[#5cff8a] font-mono tracking-tight font-medium">
-                    {typeSafeReport.derivedAdjustments.statusBadge}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
 
           <canvas
             ref={canvasRef}
@@ -2924,29 +2885,7 @@ export default function PixelPulseRush() {
                   </div>
                 </div>
 
-                {/* TypeSafe System One Neural Evaluation Report Card */}
-                {typeSafeReport && (
-                  <div className="w-full mb-3 apple-glass-card p-3 rounded-xl border border-blue-400/20 text-left">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#2997ff] flex items-center gap-1 font-apple">
-                        <Brain className="w-3.5 h-3.5 text-[#2997ff]" />
-                        TypeSafe™ System One Evaluation
-                      </span>
-                      <span className="text-[10px] font-mono text-[#ffe94a] font-bold">
-                        {typeSafeReport.rhythmPrecision.levelName}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-white/80 font-apple mb-1">
-                      <span className="text-white/50 font-normal">Archetype: </span>
-                      <span className="font-semibold text-white">
-                        {typeSafeReport.playerArchetype.distribution.find(d => d.id === typeSafeReport.playerArchetype.selected)?.label}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-white/60 font-apple italic">
-                      "{typeSafeReport.derivedAdjustments.coachingTip}"
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Rewarded Ad Bonus */}
                 <div className="mb-3 w-full">

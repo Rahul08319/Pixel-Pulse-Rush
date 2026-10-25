@@ -14,7 +14,7 @@
 <br/>
 
 <p align="center">
-  <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane <b>arcade rhythm game</b> featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, an adaptive <b>Dynamic Island floating HUD</b>, a tactile <b>4-lane arcade push-button deck</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
+  <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane <b>arcade rhythm game</b> featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, a tactile <b>4-lane arcade push-button deck</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
 </p>
 
 [🎮 Gameplay Controls](#-gameplay--controls) • [🕹️ Arcade Cabinet & Deck](#-physical-arcade-push-button-deck) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio Engine](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
@@ -31,7 +31,7 @@
 - **🎮 Physical 4-Lane Arcade Push-Button Deck**: Tactile mechanical push buttons (`D`, `F`, `J`, `K`) located directly beneath each lane with spring plunge animations, neon LED underglow, and multi-cadence haptic feedback.
 - **🔊 Synthesized Arcade UI Sound FX**: Procedural Web Audio API sound effects for clicks, game start arpeggios, difficulty switches, and pause dips.
 - **💎 Apple Liquid Glass Aesthetic**: Multi-layered frosted glass vibrancy (`backdrop-blur-32px saturate-200%`), specular edge reflections, and restrained two-layer functional hierarchy conforming to Apple HIG.
-- **🏝️ Apple Dynamic Island HUD**: Adaptive floating pill at the top of the arcade chassis—housing animated 4-band audio waveform dots, real-time score counter, combo badges, and live morphing TypeSafe telemetry badges.
+- **💎 Apple Liquid Glass Top HUD**: Restrained floating arcade bar displaying live BPM, personal bests, real-time score/combo streaks, fullscreen toggle, and sound controls.
 - **🌌 8K Ultra-Realistic Canvas Graphics**: Multi-pass bloom, 3D cylindrical note capsules with glass specular sheens, physical spark explosions with micro-gravity, shockwave ripples, and an electric laser voltage hitline.
 - **⚡ Fluid Physical Motion**: Zero-latency pointer-down response, active-state compression (`active:scale-[0.97]`), interruptible modal transitions, iOS segmented difficulty controls, and haptic Taptic feedback.
 - **🧠 TypeSafe™ System One Intelligence**: Programmable common sense running over player telemetry streams—featuring `Score`, `Noul`, and `Choice` primitives for jitter analysis, panic detection, flow state scoring, and dynamic audio/difficulty routing.
@@ -50,10 +50,7 @@ Pixel Pulse Rush is designed from the ground up as a **pure arcade machine exper
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 ARCADE TOP HUD (Apple Glass)                │
-│  [🎮] PIXEL PULSE RUSH · 140 BPM   [🧠 AI]  [⛶ MAX]  [🔊]   │
-├─────────────────────────────────────────────────────────────┤
-│               APPLE DYNAMIC ISLAND (TOP HUD)                │
-│    [ ılıl Waveform ]  Locked-In · 12,850 · 24x COMBO        │
+│  [🎮] PIXEL PULSE RUSH · 140 BPM    SCORE 12,850 · 24x [⛶]   │
 ├─────────────────────────────────────────────────────────────┤
 │  LANE 1 (Pink) │ LANE 2 (Cyan) │ LANE 3 (Yellow)│LANE 4(Grn)│
 │                │               │                │           │
@@ -225,7 +222,7 @@ A unified state machine coordinates browser tab changes with YouTube Playables l
 | **Lane 4** | <kbd>K</kbd> | Tap Lane 4 / Push Button | Hit rightmost cascade notes |
 | **Start / Restart** | <kbd>SPACE</kbd> | Press Start Button | Launch procedural track run |
 | **Pause / Resume** | <kbd>ESC</kbd> or <kbd>P</kbd> | Tap Pause Button | Toggle game pause |
-| **Dynamic Island** | Tap Top Pill | Tap Top Pill | Open TypeSafe System One Inspector |
+| **Score & Streak** | Top HUD Badge | Top HUD Badge | Real-time score counter & active combo streak |
 | **Fullscreen** | <kbd>F11</kbd> | Tap ⛶ Icon in Top HUD | Toggle Fullscreen Arcade Cabinet |
 | **Debug Overlay** | <kbd>`</kbd> (Backtick) | `?debug=1` parameter | Diagnostics, cloud queue, JSON export & FPS metrics |
 
