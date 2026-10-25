@@ -1,5 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as ytg from "@/lib/ytgame";
+import {
+  evaluateRhythmTelemetry,
+  computeStandardDeviation,
+  computeMean,
+  type PlayerSessionTelemetry,
+  type TypeSafeEvaluationReport,
+} from "@/lib/typesafe-ai-routing";
+import { TypeSafeNeuralInspector } from "@/components/TypeSafeNeuralInspector";
+import {
+  Brain,
+  Volume2,
+  VolumeX,
+  Play,
+  RotateCcw,
+  Sparkles,
+  Trophy,
+  Share2,
+  Copy,
+  Download,
+  Flame,
+  Gauge,
+  Sliders,
+  ChevronRight,
+} from "lucide-react";
 
 
 /* ============================================================
@@ -560,6 +584,31 @@ export default function PixelPulseRush() {
     | { score: number; combo: number; acc: number; diff: Difficulty }
   >(null);
 
+  // TypeSafe AI Neural Telemetry & Audio state
+  const hitDeltasRef = useRef<number[]>([]);
+  const consecutiveMissesRef = useRef(0);
+  const laneDistributionRef = useRef<[number, number, number, number]>([0, 0, 0, 0]);
+  const perfectHitsRef = useRef(0);
+  const greatHitsRef = useRef(0);
+  const gameStartTimeRef = useRef(0);
+  const [typeSafeReport, setTypeSafeReport] = useState<TypeSafeEvaluationReport | null>(null);
+  const [neuralDrawerOpen, setNeuralDrawerOpen] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
+
+  const toggleMute = useCallback(() => {
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setSoundMuted(next);
+    const eng = engineRef.current;
+    if (eng) {
+      try {
+        eng.master.gain.value = next ? 0 : 0.35;
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
   const hitsRef = useRef(0);
   const totalRef = useRef(0);
   const activeTouchesRef = useRef<Map<number, number>>(new Map());
@@ -1020,6 +1069,28 @@ export default function PixelPulseRush() {
     setRewardGranted(false);
     setRewardPending(false);
 
+    // Compute final TypeSafe System One Evaluation Report
+    const recent = hitDeltasRef.current.slice(-30);
+    const jitter = computeStandardDeviation(recent);
+    const mean = computeMean(recent);
+    const totalJudged = hitsRef.current + missesRef.current || 1;
+    const finalReport = evaluateRhythmTelemetry({
+      recentHitDeltas: recent,
+      jitterMs: jitter,
+      meanDeltaMs: mean,
+      perfectRatio: perfectHitsRef.current / totalJudged,
+      greatRatio: greatHitsRef.current / totalJudged,
+      missRatio: missesRef.current / totalJudged,
+      currentCombo: bestComboRef.current,
+      bestCombo: bestComboRef.current,
+      recentConsecutiveMisses: consecutiveMissesRef.current,
+      bpm: engine?.bpm ?? DIFFICULTIES[difficulty].bpm,
+      difficulty,
+      laneDistribution: [...laneDistributionRef.current],
+      elapsedSeconds: Math.max(1, Math.floor((performance.now() - gameStartTimeRef.current) / 1000)),
+    });
+    setTypeSafeReport(finalReport);
+
     const next: AllStats = {
       ...statsAll,
       [difficulty]: {
@@ -1072,6 +1143,13 @@ export default function PixelPulseRush() {
     hitWindowRef.current = cfg.hitWindow;
     perfectWindowRef.current = cfg.perfectWindow;
     setHud({ score: 0, combo: 0, misses: 0, best: 0 });
+    hitDeltasRef.current = [];
+    consecutiveMissesRef.current = 0;
+    laneDistributionRef.current = [0, 0, 0, 0];
+    perfectHitsRef.current = 0;
+    greatHitsRef.current = 0;
+    gameStartTimeRef.current = performance.now();
+    setTypeSafeReport(null);
     setFinalStats(null);
     setRewardGranted(false);
     setRewardPending(false);
@@ -1154,6 +1232,8 @@ export default function PixelPulseRush() {
       }
     }
     laneFlashRef.current[lane] = 1;
+    laneDistributionRef.current[lane]++;
+
     if (best && bestDelta <= hitWindowRef.current) {
       best.hit = true;
       best.judged = true;
@@ -1165,6 +1245,25 @@ export default function PixelPulseRush() {
       const gain = (perfect ? 100 : 50) * (1 + Math.floor(comboRef.current / 10) * 0.5);
       scoreRef.current += Math.round(gain);
       pulseRef.current = 1;
+
+      const signedDelta = (now - best.hitAt) * 1000 - offset;
+      hitDeltasRef.current.push(signedDelta);
+      if (perfect) {
+        perfectHitsRef.current++;
+      } else {
+        greatHitsRef.current++;
+      }
+      consecutiveMissesRef.current = 0;
+
+      // Apple-style tactile haptic feedback
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate?.(perfect ? 14 : 22);
+        } catch {
+          /* ignore */
+        }
+      }
+
       judgementsRef.current.push({
         text: perfect ? "PERFECT" : "GOOD",
         color: perfect ? "#ffe94a" : "#22e2ff",
@@ -1172,11 +1271,44 @@ export default function PixelPulseRush() {
       });
     } else {
       comboRef.current = 0;
+      consecutiveMissesRef.current++;
+      hitDeltasRef.current.push(115);
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate?.(32);
+        } catch {
+          /* ignore */
+        }
+      }
       judgementsRef.current.push({
         text: "MISS",
         color: "#ff3ea5",
         at: performance.now(),
       });
+    }
+
+    // TypeSafe System One live evaluation stream
+    if ((hitsRef.current + missesRef.current) % 4 === 0 && hitDeltasRef.current.length >= 3) {
+      const recent = hitDeltasRef.current.slice(-24);
+      const jitter = computeStandardDeviation(recent);
+      const mean = computeMean(recent);
+      const totalJudged = hitsRef.current + missesRef.current || 1;
+      const rep = evaluateRhythmTelemetry({
+        recentHitDeltas: recent,
+        jitterMs: jitter,
+        meanDeltaMs: mean,
+        perfectRatio: perfectHitsRef.current / totalJudged,
+        greatRatio: greatHitsRef.current / totalJudged,
+        missRatio: missesRef.current / totalJudged,
+        currentCombo: comboRef.current,
+        bestCombo: bestComboRef.current,
+        recentConsecutiveMisses: consecutiveMissesRef.current,
+        bpm: engine.bpm,
+        difficulty,
+        laneDistribution: [...laneDistributionRef.current],
+        elapsedSeconds: Math.max(1, Math.floor((performance.now() - gameStartTimeRef.current) / 1000)),
+      });
+      setTypeSafeReport(rep);
     }
   }, []);
 
@@ -1352,6 +1484,8 @@ export default function PixelPulseRush() {
             n.missed = true;
             comboRef.current = 0;
             missesRef.current++;
+            consecutiveMissesRef.current++;
+            hitDeltasRef.current.push(hitWindowRef.current + 20);
             judgementsRef.current.push({
               text: "MISS",
               color: "#ff3ea5",
@@ -1854,422 +1988,538 @@ export default function PixelPulseRush() {
   const diffKeys = useMemo(() => Object.keys(DIFFICULTIES) as Difficulty[], []);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-6">
-      <header className="w-full max-w-[560px] flex items-center justify-between mb-3">
-        <h1 className="font-display text-glow-pink text-sm sm:text-base">
-          PIXEL PULSE RUSH
-        </h1>
-        <div className="flex gap-3 text-xs sm:text-sm items-center">
-          <span className="text-glow-cyan">SCORE {hud.score}</span>
-          <span className="text-glow-yellow">x{hud.combo}</span>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-hidden font-apple">
+      {/* Dynamic Apple Spatial Ambient Lighting */}
+      <div
+        className="apple-ambient-glow fixed -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full opacity-40 blur-[100px] pointer-events-none -z-10"
+        style={{
+          background:
+            hud.combo > 20
+              ? "radial-gradient(ellipse, rgba(255, 62, 165, 0.45) 0%, rgba(41, 151, 255, 0.25) 50%, transparent 80%)"
+              : "radial-gradient(ellipse, rgba(41, 151, 255, 0.35) 0%, rgba(255, 62, 165, 0.2) 50%, transparent 80%)",
+        }}
+      />
+
+      {/* Apple Liquid Glass Top Navigation Bar */}
+      <header className="w-full max-w-[560px] apple-glass rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between mb-3 border border-white/12 shadow-xl shadow-black/40">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-[var(--neon-pink)] via-[#7b2cbf] to-[#0066cc] p-0.5 shadow-md shadow-pink-500/25">
+            <span className="text-white text-xs font-display">⚡</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-bold text-white text-sm sm:text-base tracking-tight leading-none font-apple">
+                PIXEL PULSE RUSH
+              </h1>
+              <span className="hidden sm:inline-block px-1.5 py-0.5 text-[8px] font-mono uppercase rounded-full bg-white/10 text-white/70 border border-white/10">
+                AI ENGINE
+              </span>
+            </div>
+            <div className="text-[10px] text-white/50 font-apple flex items-center gap-2 mt-0.5">
+              <span>{engineRef.current ? Math.round(engineRef.current.bpm) : DIFFICULTIES[difficulty].bpm} BPM</span>
+              <span>·</span>
+              <span>BEST {statsAll[difficulty].bestScore}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* TypeSafe Neural Engine Pill */}
+          <button
+            onClick={() => setNeuralDrawerOpen(true)}
+            className="apple-interactive flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-[#2997ff] text-xs font-semibold shadow-sm"
+            title="Open TypeSafe System One Neural Rhythm Inspector"
+          >
+            <Brain className="w-3.5 h-3.5 animate-pulse text-[#2997ff]" />
+            <span className="text-[10px] font-apple hidden xs:inline tracking-tight">
+              {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "Neural AI"}
+            </span>
+          </button>
+
+          {/* Sound Mute Toggle */}
+          <button
+            onClick={toggleMute}
+            aria-label={soundMuted ? "Unmute Audio" : "Mute Audio"}
+            className="apple-interactive p-2 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white border border-white/10"
+          >
+            {soundMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-[#5cff8a]" />}
+          </button>
         </div>
       </header>
 
-      <div
-        ref={playSurfaceRef}
-        tabIndex={0}
-        role="application"
-        aria-label="Pixel Pulse Rush play surface"
-        style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
-        className="relative w-full max-w-[560px] aspect-[9/16] rounded-lg overflow-hidden border border-border scanlines shadow-[0_0_60px_-10px_rgba(255,62,165,0.5)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[var(--neon-cyan)]"
-      >
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full block touch-none select-none pointer-events-none"
-        />
+      {/* Main Game Stage Chassis */}
+      <div className="relative w-full max-w-[560px] flex flex-col items-center">
+        <div
+          ref={playSurfaceRef}
+          tabIndex={0}
+          role="application"
+          aria-label="Pixel Pulse Rush play surface"
+          style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+          className="relative w-full aspect-[9/16] rounded-3xl overflow-hidden border border-white/15 scanlines shadow-[0_20px_50px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.25)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[#2997ff]"
+        >
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full block touch-none select-none pointer-events-none"
+          />
 
-        {state === "playing" && (
-          <div
-            className="absolute left-0 right-0 flex touch-none select-none"
-            style={{
-              top: `${HIT_LINE_RATIO * 100 - 30}%`,
-              bottom: 0,
-            }}
-            onPointerDown={onZonePointerDown}
-            onPointerMove={onZonePointerMove}
-            onPointerUp={onZonePointerUp}
-            onPointerCancel={onZonePointerUp}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            {Array.from({ length: LANES }).map((_, i) => (
+          {state === "playing" && (
+            <div
+              className="absolute left-0 right-0 flex touch-none select-none"
+              style={{
+                top: `${HIT_LINE_RATIO * 100 - 30}%`,
+                bottom: 0,
+              }}
+              onPointerDown={onZonePointerDown}
+              onPointerMove={onZonePointerMove}
+              onPointerUp={onZonePointerUp}
+              onPointerCancel={onZonePointerUp}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              {Array.from({ length: LANES }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 border-x border-white/5 active:bg-white/10 transition-colors"
+                  style={{
+                    background: `linear-gradient(to top, ${LANE_COLORS[i]}22, transparent)`,
+                  }}
+                  aria-label={`Lane ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Miss pips (Apple rounded glass pips) */}
+          <div className="absolute top-3 left-3 flex gap-1.5 z-20">
+            {Array.from({ length: MAX_MISSES }).map((_, i) => (
               <div
                 key={i}
-                className="flex-1 border-x border-white/5"
+                className="w-3.5 h-3.5 rounded-full transition-all duration-200"
                 style={{
-                  background: `linear-gradient(to top, ${LANE_COLORS[i]}22, transparent)`,
+                  background:
+                    i < hud.misses ? "rgba(255,255,255,0.12)" : "var(--neon-pink)",
+                  border: i < hud.misses ? "1px solid rgba(255,255,255,0.2)" : "1px solid var(--neon-pink)",
+                  boxShadow:
+                    i < hud.misses ? "none" : "0 0 10px var(--neon-pink)",
                 }}
-                aria-label={`Lane ${i + 1}`}
               />
             ))}
           </div>
-        )}
 
-        {/* Miss pips */}
-        <div className="absolute top-2 left-2 flex gap-1">
-          {Array.from({ length: MAX_MISSES }).map((_, i) => (
-            <div
-              key={i}
-              className="w-3 h-3 rounded-sm"
-              style={{
-                background:
-                  i < hud.misses ? "transparent" : "var(--neon-pink)",
-                border: "1px solid var(--neon-pink)",
-                boxShadow:
-                  i < hud.misses ? "none" : "0 0 8px var(--neon-pink)",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Pause button during play */}
-        {state === "playing" && (
-          <button
-            onClick={pauseGame}
-            aria-label="Pause"
-            className="absolute top-2 left-1/2 -translate-x-1/2 z-20 font-display text-[10px] px-3 py-2 rounded bg-black/60 border border-white/20 text-white/90 backdrop-blur-sm hover:bg-black/80"
-          >
-            ❚❚ PAUSE
-          </button>
-        )}
-
-        <div className="absolute top-2 right-2 text-[10px] sm:text-xs font-display text-glow-cyan flex flex-col items-end gap-1">
-          <span>BEST {hud.best}x</span>
-          {(state === "playing" || state === "paused") && (
-            <span className="text-glow-yellow opacity-80">
-              {DIFFICULTIES[difficulty].label}
-            </span>
+          {/* TypeSafe Live Telemetry Pill during play */}
+          {state === "playing" && typeSafeReport && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 apple-glass-pill px-3 py-1 rounded-full text-[9px] font-mono text-white/90 border border-white/15 flex items-center gap-1.5 pointer-events-none shadow-sm animate-in fade-in">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+              <span>{typeSafeReport.derivedAdjustments.statusBadge}</span>
+            </div>
           )}
-        </div>
 
-        {state === "idle" && (
-          <Overlay>
-            <h2 className="font-display text-glow-pink text-lg sm:text-2xl mb-2">
-              PIXEL PULSE RUSH
-            </h2>
+          {/* Pause button during play */}
+          {state === "playing" && (
+            <button
+              onClick={pauseGame}
+              aria-label="Pause"
+              className="apple-interactive absolute top-3 right-3 z-20 font-apple text-[10px] font-semibold px-3 py-1.5 rounded-full bg-black/60 border border-white/20 text-white/90 backdrop-blur-md hover:bg-black/80 flex items-center gap-1"
+            >
+              <span>❚❚</span>
+              <span>PAUSE</span>
+            </button>
+          )}
 
-            {challenge && (
-              <div className="mb-3 px-3 py-2 rounded border border-[var(--neon-yellow)] bg-[var(--neon-yellow)]/10 text-[11px] text-glow-yellow max-w-xs">
-                CHALLENGE · {DIFFICULTIES[challenge.diff].label} ·{" "}
-                {challenge.score} pts · {challenge.combo}x · {challenge.acc}%
-              </div>
-            )}
-
-            <p className="max-w-xs text-sm text-muted-foreground mb-3 leading-relaxed">
-              Tap the neon blocks as they hit the line. Miss 3 and your pulse
-              flatlines.
-            </p>
-
-            <div className="w-full max-w-xs mb-3">
-              <div className="text-[10px] font-display text-glow-cyan mb-2 tracking-widest">
-                DIFFICULTY
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                {diffKeys.map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setDifficulty(k)}
-                    className={`font-display text-[10px] px-2 py-2 rounded border transition-colors ${
-                      difficulty === k
-                        ? "bg-[var(--neon-cyan)] text-black border-transparent shadow-[0_0_16px_-2px_var(--neon-cyan)]"
-                        : "bg-transparent text-foreground/80 border-border hover:border-[var(--neon-cyan)]"
-                    }`}
-                  >
-                    {DIFFICULTIES[k].label}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-1 text-[11px] text-muted-foreground min-h-[2.5em]">
-                {DIFFICULTIES[difficulty].blurb}
-              </div>
-            </div>
-
-            {/* Per-difficulty stats */}
-            <div className="w-full max-w-xs mb-3 border border-border/60 rounded p-2 bg-black/30">
-              <div className="text-[10px] font-display text-glow-cyan mb-1 tracking-widest text-left">
-                BEST — {DIFFICULTIES[difficulty].label}
-              </div>
-              <div className="grid grid-cols-4 gap-1 text-[10px] font-mono text-left">
-                <div>
-                  <div className="text-muted-foreground">SCORE</div>
-                  <div className="text-glow-yellow text-sm">
-                    {statsAll[difficulty].bestScore}
-                  </div>
+          {/* Idle / Start Overlay */}
+          {state === "idle" && (
+            <Overlay>
+              <div className="apple-glass-card w-full max-w-[340px] p-5 sm:p-6 border border-white/15 shadow-2xl flex flex-col items-center">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[var(--neon-pink)] to-[#0066cc] p-0.5 shadow-lg shadow-pink-500/30 mb-3 flex items-center justify-center">
+                  <span className="text-white text-xl font-display">⚡</span>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">COMBO</div>
-                  <div className="text-glow-pink text-sm">
-                    {statsAll[difficulty].bestCombo}x
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">ACC</div>
-                  <div className="text-glow-cyan text-sm">
-                    {statsAll[difficulty].bestAccuracy}%
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">RUNS</div>
-                  <div className="text-white text-sm">
-                    {statsAll[difficulty].plays}
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex flex-col items-center gap-2 mb-3">
-              <button
-                onClick={startGame}
-                className="font-display text-xs px-5 py-3 rounded bg-[var(--neon-pink)] text-black hover:brightness-110 active:translate-y-px shadow-[0_0_24px_-2px_var(--neon-pink)]"
-              >
-                PRESS START
-              </button>
-              <div className="flex gap-2 items-center text-[10px] font-mono text-muted-foreground">
-                <button
-                  onClick={startCalibration}
-                  className="font-display text-[9px] px-2 py-1 rounded border border-[var(--neon-cyan)] text-glow-cyan hover:bg-[var(--neon-cyan)]/10"
-                >
-                  CALIBRATE
-                </button>
-                <span>
-                  offset {latencyOffset >= 0 ? "+" : ""}
-                  {latencyOffset}ms
-                </span>
-                {latencyOffset !== 0 && (
-                  <button
-                    onClick={resetCalibration}
-                    className="underline hover:text-white"
-                  >
-                    reset
-                  </button>
+                <h2 className="font-display text-glow-pink text-base sm:text-xl mb-1 text-center">
+                  PIXEL PULSE RUSH
+                </h2>
+                <p className="text-xs text-white/60 mb-4 text-center font-apple">
+                  Tap neon blocks on the beat line. Miss 3 and pulse flatlines.
+                </p>
+
+                {challenge && (
+                  <div className="mb-3 px-3 py-1.5 rounded-xl border border-[var(--neon-yellow)]/40 bg-[var(--neon-yellow)]/10 text-[11px] text-glow-yellow max-w-xs text-center">
+                    CHALLENGE · {DIFFICULTIES[challenge.diff].label} · {challenge.score} pts · {challenge.combo}x
+                  </div>
                 )}
-              </div>
-            </div>
 
-            <div className="text-[10px] opacity-70 font-mono">
-              KEYS D F J K · SPACE start · ESC/P pause
-            </div>
-          </Overlay>
-        )}
+                {/* Apple Segmented Control for Difficulty */}
+                <div className="w-full mb-3.5">
+                  <div className="text-[10px] font-semibold text-white/60 mb-1.5 tracking-wider font-apple text-center uppercase">
+                    DIFFICULTY MODE
+                  </div>
+                  <div className="apple-glass-pill p-1 rounded-xl flex items-center justify-between border border-white/10">
+                    {diffKeys.map((k) => (
+                      <button
+                        key={k}
+                        onClick={() => setDifficulty(k)}
+                        className={`apple-interactive flex-1 py-1.5 px-2 rounded-lg text-xs font-apple transition-all duration-150 ${
+                          difficulty === k
+                            ? "bg-white/20 text-white font-semibold shadow-sm border border-white/25"
+                            : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        {DIFFICULTIES[k].label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-1 text-[10px] text-white/50 min-h-[1.8em] font-apple text-center">
+                    {DIFFICULTIES[difficulty].blurb}
+                  </div>
+                </div>
 
-        {state === "paused" && (
-          <Overlay>
-            <h2 className="font-display text-glow-cyan text-lg sm:text-2xl mb-4">
-              PAUSED
-            </h2>
-            <div className="text-sm mb-4 space-y-1 text-center">
-              <div>
-                <span className="text-glow-yellow">SCORE</span> {hud.score}
-              </div>
-              <div>
-                <span className="text-glow-pink">COMBO</span> {hud.combo}x ·
-                BEST {hud.best}x
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 w-full max-w-[220px]">
-              <button
-                onClick={resumeGame}
-                className="font-display text-xs px-4 py-3 rounded bg-[var(--neon-green)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-green)]"
-              >
-                ▶ RESUME
-              </button>
-              <button
-                onClick={startGame}
-                className="font-display text-xs px-4 py-3 rounded bg-[var(--neon-yellow)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-yellow)]"
-              >
-                ↻ RESTART
-              </button>
-              <button
-                onClick={quitToMenu}
-                className="font-display text-[10px] px-4 py-2 rounded border border-white/30 text-white/80 hover:bg-white/10"
-              >
-                QUIT
-              </button>
-            </div>
-            <AdHint hint={interstitialHint} retry={debug.saveRetry} />
-          </Overlay>
-        )}
+                {/* Per-difficulty stats card */}
+                <div className="w-full mb-4 apple-glass-pill p-2.5 rounded-xl border border-white/10">
+                  <div className="text-[10px] font-semibold text-[#2997ff] mb-1.5 tracking-wider font-apple text-left uppercase flex items-center justify-between">
+                    <span>Personal Best · {DIFFICULTIES[difficulty].label}</span>
+                    <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 text-left font-mono">
+                    <div>
+                      <div className="text-[8px] text-white/50">SCORE</div>
+                      <div className="text-glow-yellow text-xs font-bold">
+                        {statsAll[difficulty].bestScore}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/50">COMBO</div>
+                      <div className="text-glow-pink text-xs font-bold">
+                        {statsAll[difficulty].bestCombo}x
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/50">ACC</div>
+                      <div className="text-glow-cyan text-xs font-bold">
+                        {statsAll[difficulty].bestAccuracy}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/50">RUNS</div>
+                      <div className="text-white text-xs font-bold">
+                        {statsAll[difficulty].plays}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-
-        {state === "calibrating" && calProgress && (
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/70 backdrop-blur-sm px-4 z-10 touch-none select-none"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              calibrationTap();
-            }}
-          >
-            <h2 className="font-display text-glow-yellow text-base sm:text-xl mb-2">
-              CALIBRATE
-            </h2>
-            <p className="text-[12px] text-muted-foreground max-w-xs mb-4">
-              Tap anywhere in time with the beeps. We'll match the timing window
-              to your device's audio latency.
-            </p>
-            <div className="font-display text-glow-cyan text-3xl mb-2">
-              {calProgress.taps} / {calProgress.total}
-            </div>
-            <div className="text-xs text-muted-foreground mb-4">
-              offset {calProgress.offset >= 0 ? "+" : ""}
-              {Math.round(calProgress.offset)}ms
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  cancelCalibration();
-                }}
-                className="font-display text-[10px] px-3 py-2 rounded border border-white/30 text-white/80 hover:bg-white/10"
-              >
-                CANCEL
-              </button>
-              {calProgress.taps >= 3 && (
+                {/* Start Button */}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    finishCalibration(calProgress.offset);
-                  }}
-                  className="font-display text-[10px] px-3 py-2 rounded bg-[var(--neon-green)] text-black"
+                  onClick={startGame}
+                  className="apple-interactive w-full font-apple font-bold text-xs sm:text-sm py-3 px-6 rounded-xl bg-gradient-to-r from-[var(--neon-pink)] to-[#0066cc] text-white shadow-lg shadow-pink-500/25 hover:brightness-110 active:scale-95 flex items-center justify-center gap-2 mb-3"
                 >
-                  SAVE
+                  <Play className="w-4 h-4 fill-white" />
+                  PRESS START
                 </button>
-              )}
-            </div>
-          </div>
-        )}
 
-        {state === "over" && finalStats && (
-          <Overlay>
-            <h2 className="font-display text-glow-pink text-base sm:text-xl mb-1">
-              FLATLINE
-            </h2>
-            <div className="text-[10px] font-display text-glow-cyan mb-2 tracking-widest">
-              {DIFFICULTIES[finalStats.difficulty].label} ·{" "}
-              {Math.round(finalStats.bpm)} BPM
-            </div>
-            <div className="font-display text-glow-yellow text-3xl sm:text-5xl mb-1">
-              {finalStats.score}
-            </div>
-            {(finalStats.newBestScore || finalStats.newBestCombo) && (
-              <div className="mb-2 text-[10px] font-display text-glow-pink animate-pulse">
-                {finalStats.newBestScore ? "NEW BEST SCORE! " : ""}
-                {finalStats.newBestCombo ? "NEW BEST COMBO!" : ""}
-              </div>
-            )}
-            <div className="text-sm space-y-1 mb-3">
-              <div>
-                <span className="text-glow-cyan">COMBO</span>{" "}
-                {finalStats.bestCombo}x
-              </div>
-              <div>
-                <span className="text-glow-cyan">ACC</span>{" "}
-                {finalStats.accuracy}%
-              </div>
-              <div>
-                <span className="text-glow-cyan">HITS</span>{" "}
-                {finalStats.hits}/{finalStats.total}
-              </div>
-            </div>
+                {/* Physical Keycaps */}
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-white/70 font-apple mb-2">
+                  <span>Keys:</span>
+                  <span className="apple-keycap">D</span>
+                  <span className="apple-keycap">F</span>
+                  <span className="apple-keycap">J</span>
+                  <span className="apple-keycap">K</span>
+                  <span className="text-white/40">·</span>
+                  <span className="apple-keycap">SPACE</span>
+                </div>
 
-            {/* Rewarded ad: grants a one-time score bonus per game-over screen. */}
-            <div className="mb-2 w-full max-w-[260px] mx-auto">
-              <button
-                onClick={claimRewardedBonus}
-                disabled={rewardGranted || rewardPending}
-                className="w-full font-display text-[10px] px-4 py-3 rounded bg-gradient-to-r from-[var(--neon-pink)] to-[var(--neon-yellow)] text-black hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_20px_-2px_var(--neon-yellow)]"
-              >
-                {rewardGranted
-                  ? `✓ +${REWARD_BONUS_POINTS} BONUS APPLIED`
-                  : rewardPending
-                    ? "LOADING AD…"
-                    : `🎁 WATCH AD · +${REWARD_BONUS_POINTS} PTS`}
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center mb-2">
-              <button
-                onClick={startGame}
-                className="font-display text-[10px] px-4 py-2 rounded bg-[var(--neon-pink)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-pink)]"
-              >
-                RETRY
-              </button>
-              <button
-                onClick={quitToMenu}
-                className="font-display text-[10px] px-4 py-2 rounded border border-white/30 text-white/80 hover:bg-white/10"
-              >
-                MENU
-              </button>
-              <button
-                onClick={shareScore}
-                className="font-display text-[10px] px-4 py-2 rounded bg-[var(--neon-cyan)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-cyan)]"
-              >
-                SHARE
-              </button>
-              <button
-                onClick={copyShareLink}
-                className="font-display text-[10px] px-4 py-2 rounded border border-[var(--neon-cyan)] text-glow-cyan hover:bg-[var(--neon-cyan)]/10"
-              >
-                COPY LINK
-              </button>
-              <button
-                onClick={downloadCard}
-                className="font-display text-[10px] px-4 py-2 rounded bg-[var(--neon-yellow)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-yellow)]"
-              >
-                PNG
-              </button>
-              <button
-                onClick={downloadCardPdf}
-                className="font-display text-[10px] px-4 py-2 rounded bg-[var(--neon-green)] text-black hover:brightness-110 shadow-[0_0_20px_-2px_var(--neon-green)]"
-              >
-                PDF
-              </button>
-            </div>
-
-            {socialLinks && (
-              <div className="flex gap-2 justify-center text-[10px] font-display">
-                <a
-                  href={socialLinks.twitter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 rounded border border-white/20 hover:border-[var(--neon-cyan)] hover:text-glow-cyan"
-                >
-                  X
-                </a>
-                <a
-                  href={socialLinks.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 rounded border border-white/20 hover:border-[var(--neon-cyan)] hover:text-glow-cyan"
-                >
-                  FB
-                </a>
-                <a
-                  href={socialLinks.reddit}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 rounded border border-white/20 hover:border-[var(--neon-cyan)] hover:text-glow-cyan"
-                >
-                  REDDIT
-                </a>
-                <a
-                  href={socialLinks.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 rounded border border-white/20 hover:border-[var(--neon-cyan)] hover:text-glow-cyan"
-                >
-                  WA
-                </a>
+                {/* Calibration pill */}
+                <div className="flex gap-2 items-center text-[10px] font-mono text-white/50">
+                  <button
+                    onClick={startCalibration}
+                    className="apple-interactive px-2 py-0.5 rounded border border-white/20 text-white/70 hover:text-white"
+                  >
+                    CALIBRATE
+                  </button>
+                  <span>
+                    offset {latencyOffset >= 0 ? "+" : ""}
+                    {latencyOffset}ms
+                  </span>
+                  {latencyOffset !== 0 && (
+                    <button onClick={resetCalibration} className="underline hover:text-white">
+                      reset
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-            <AdHint hint={interstitialHint} retry={debug.saveRetry} />
-          </Overlay>
-        )}
+            </Overlay>
+          )}
 
-        <DebugOverlay open={debugOpen} info={debug} onClose={() => setDebugOpen(false)} />
+          {/* Paused Screen Overlay */}
+          {state === "paused" && (
+            <Overlay>
+              <div className="apple-glass-card w-full max-w-[280px] p-6 border border-white/15 shadow-2xl flex flex-col items-center">
+                <h2 className="font-display text-glow-cyan text-xl mb-3">PAUSED</h2>
+                <div className="text-sm mb-4 space-y-1 text-center font-mono">
+                  <div>
+                    <span className="text-glow-yellow">SCORE</span> {hud.score}
+                  </div>
+                  <div>
+                    <span className="text-glow-pink">COMBO</span> {hud.combo}x · BEST {hud.best}x
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2.5 w-full">
+                  <button
+                    onClick={resumeGame}
+                    className="apple-interactive font-apple font-bold text-xs py-2.5 px-4 rounded-xl bg-[var(--neon-green)] text-black hover:brightness-110 shadow-lg shadow-green-500/20"
+                  >
+                    ▶ RESUME
+                  </button>
+                  <button
+                    onClick={startGame}
+                    className="apple-interactive font-apple font-bold text-xs py-2.5 px-4 rounded-xl bg-[var(--neon-yellow)] text-black hover:brightness-110 shadow-lg shadow-yellow-500/20"
+                  >
+                    ↻ RESTART
+                  </button>
+                  <button
+                    onClick={quitToMenu}
+                    className="apple-interactive font-apple text-xs py-2 px-4 rounded-xl border border-white/20 text-white/80 hover:bg-white/10"
+                  >
+                    QUIT TO MENU
+                  </button>
+                </div>
+                <AdHint hint={interstitialHint} retry={debug.saveRetry} />
+              </div>
+            </Overlay>
+          )}
+
+          {/* Calibration Screen */}
+          {state === "calibrating" && calProgress && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/75 backdrop-blur-md px-4 z-10 touch-none select-none"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                calibrationTap();
+              }}
+            >
+              <div className="apple-glass-card p-6 rounded-2xl max-w-xs border border-white/15">
+                <h2 className="font-display text-glow-yellow text-base sm:text-xl mb-2">
+                  CALIBRATE
+                </h2>
+                <p className="text-[12px] text-white/60 mb-4 font-apple">
+                  Tap anywhere in time with the beeps to align timing to your hardware audio latency.
+                </p>
+                <div className="font-display text-glow-cyan text-3xl mb-2">
+                  {calProgress.taps} / {calProgress.total}
+                </div>
+                <div className="text-xs text-white/70 mb-4 font-mono">
+                  offset {calProgress.offset >= 0 ? "+" : ""}
+                  {Math.round(calProgress.offset)}ms
+                </div>
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cancelCalibration();
+                    }}
+                    className="apple-interactive font-apple text-[11px] px-3.5 py-1.5 rounded-lg border border-white/30 text-white/80 hover:bg-white/10"
+                  >
+                    CANCEL
+                  </button>
+                  {calProgress.taps >= 3 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        finishCalibration(calProgress.offset);
+                      }}
+                      className="apple-interactive font-apple font-bold text-[11px] px-3.5 py-1.5 rounded-lg bg-[var(--neon-green)] text-black"
+                    >
+                      SAVE
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Game Over Screen */}
+          {state === "over" && finalStats && (
+            <Overlay>
+              <div className="apple-glass-card w-full max-w-[340px] p-5 sm:p-6 border border-white/15 shadow-2xl flex flex-col items-center max-h-[85vh] overflow-y-auto">
+                <h2 className="font-display text-glow-pink text-lg sm:text-2xl mb-0.5">
+                  FLATLINE
+                </h2>
+                <div className="text-[10px] font-mono text-white/60 mb-2 uppercase tracking-wider">
+                  {DIFFICULTIES[finalStats.difficulty].label} · {Math.round(finalStats.bpm)} BPM
+                </div>
+                <div className="font-display text-glow-yellow text-4xl sm:text-5xl mb-2">
+                  {finalStats.score}
+                </div>
+
+                {(finalStats.newBestScore || finalStats.newBestCombo) && (
+                  <div className="mb-3 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/40 text-[10px] font-apple font-bold text-glow-pink animate-pulse">
+                    {finalStats.newBestScore ? "★ NEW BEST SCORE! " : ""}
+                    {finalStats.newBestCombo ? "★ NEW BEST COMBO!" : ""}
+                  </div>
+                )}
+
+                {/* Score breakdown grid */}
+                <div className="grid grid-cols-3 gap-2 w-full mb-3 text-center font-mono">
+                  <div className="apple-glass-pill p-2 rounded-xl border border-white/10">
+                    <div className="text-[9px] text-white/50">COMBO</div>
+                    <div className="text-glow-pink text-sm font-bold">{finalStats.bestCombo}x</div>
+                  </div>
+                  <div className="apple-glass-pill p-2 rounded-xl border border-white/10">
+                    <div className="text-[9px] text-white/50">ACCURACY</div>
+                    <div className="text-glow-cyan text-sm font-bold">{finalStats.accuracy}%</div>
+                  </div>
+                  <div className="apple-glass-pill p-2 rounded-xl border border-white/10">
+                    <div className="text-[9px] text-white/50">HITS</div>
+                    <div className="text-white text-sm font-bold">{finalStats.hits}/{finalStats.total}</div>
+                  </div>
+                </div>
+
+                {/* TypeSafe System One Neural Evaluation Report Card */}
+                {typeSafeReport && (
+                  <div className="w-full mb-3 apple-glass-card p-3 rounded-xl border border-blue-400/20 text-left">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#2997ff] flex items-center gap-1 font-apple">
+                        <Brain className="w-3.5 h-3.5 text-[#2997ff]" />
+                        TypeSafe™ System One Evaluation
+                      </span>
+                      <span className="text-[10px] font-mono text-[#ffe94a] font-bold">
+                        {typeSafeReport.rhythmPrecision.levelName}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-white/80 font-apple mb-1">
+                      <span className="text-white/50 font-normal">Archetype: </span>
+                      <span className="font-semibold text-white">
+                        {typeSafeReport.playerArchetype.distribution.find(d => d.id === typeSafeReport.playerArchetype.selected)?.label}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-white/60 font-apple italic">
+                      "{typeSafeReport.derivedAdjustments.coachingTip}"
+                    </div>
+                  </div>
+                )}
+
+                {/* Rewarded Ad Bonus */}
+                <div className="mb-3 w-full">
+                  <button
+                    onClick={claimRewardedBonus}
+                    disabled={rewardGranted || rewardPending}
+                    className="apple-interactive w-full font-apple font-semibold text-[11px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--neon-pink)] to-[var(--neon-yellow)] text-black hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  >
+                    {rewardGranted
+                      ? `✓ +${REWARD_BONUS_POINTS} BONUS APPLIED`
+                      : rewardPending
+                        ? "LOADING AD…"
+                        : `🎁 WATCH AD · +${REWARD_BONUS_POINTS} PTS`}
+                  </button>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 justify-center w-full mb-3">
+                  <button
+                    onClick={startGame}
+                    className="apple-interactive flex-1 font-apple font-bold text-xs py-2 px-3 rounded-xl bg-[var(--neon-pink)] text-black hover:brightness-110 shadow-md shadow-pink-500/20"
+                  >
+                    RETRY
+                  </button>
+                  <button
+                    onClick={quitToMenu}
+                    className="apple-interactive flex-1 font-apple text-xs py-2 px-3 rounded-xl border border-white/20 text-white/80 hover:bg-white/10"
+                  >
+                    MENU
+                  </button>
+                  <button
+                    onClick={shareScore}
+                    className="apple-interactive flex-1 font-apple font-semibold text-xs py-2 px-3 rounded-xl bg-[var(--neon-cyan)] text-black hover:brightness-110"
+                  >
+                    SHARE
+                  </button>
+                </div>
+
+                <div className="flex gap-2 justify-center w-full">
+                  <button
+                    onClick={copyShareLink}
+                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg border border-white/20 text-white/70 hover:text-white"
+                  >
+                    COPY LINK
+                  </button>
+                  <button
+                    onClick={downloadCard}
+                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg bg-[var(--neon-yellow)] text-black font-semibold"
+                  >
+                    PNG
+                  </button>
+                  <button
+                    onClick={downloadCardPdf}
+                    className="apple-interactive text-[10px] px-3 py-1.5 rounded-lg bg-[var(--neon-green)] text-black font-semibold"
+                  >
+                    PDF
+                  </button>
+                </div>
+
+                {socialLinks && (
+                  <div className="flex gap-2 justify-center text-[10px] font-mono mt-3">
+                    <a
+                      href={socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
+                    >
+                      X
+                    </a>
+                    <a
+                      href={socialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
+                    >
+                      FB
+                    </a>
+                    <a
+                      href={socialLinks.reddit}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
+                    >
+                      REDDIT
+                    </a>
+                    <a
+                      href={socialLinks.whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-0.5 rounded border border-white/20 hover:text-white"
+                    >
+                      WA
+                    </a>
+                  </div>
+                )}
+                <AdHint hint={interstitialHint} retry={debug.saveRetry} />
+              </div>
+            </Overlay>
+          )}
+
+          <DebugOverlay open={debugOpen} info={debug} onClose={() => setDebugOpen(false)} />
+        </div>
       </div>
 
+      {/* TypeSafe System One Neural Rhythm Inspector Modal */}
+      <TypeSafeNeuralInspector
+        open={neuralDrawerOpen}
+        onClose={() => setNeuralDrawerOpen(false)}
+        report={typeSafeReport}
+        currentBpm={engineRef.current ? Math.round(engineRef.current.bpm) : DIFFICULTIES[difficulty].bpm}
+        combo={hud.combo}
+      />
 
-      <footer className="mt-4 text-[11px] text-muted-foreground text-center max-w-[560px]">
-        Procedurally generated chiptune · Every run is a new track
+      {/* Sleek Apple Footer */}
+      <footer className="mt-4 text-xs text-white/50 font-apple text-center max-w-[560px] flex items-center justify-center gap-2.5">
+        <span>Procedural Chiptune</span>
+        <span>·</span>
+        <span>Apple Liquid Glass</span>
+        <span>·</span>
+        <button
+          onClick={() => setNeuralDrawerOpen(true)}
+          className="text-[#2997ff] hover:underline flex items-center gap-1"
+        >
+          <Brain className="w-3 h-3 text-[#2997ff]" />
+          TypeSafe™ System One
+        </button>
       </footer>
     </div>
   );

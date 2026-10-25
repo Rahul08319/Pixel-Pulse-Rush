@@ -29,30 +29,33 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-yellow: var(--neon-yellow);
   --color-neon-green: var(--neon-green);
+  --color-apple-blue: #2997ff;
+  --color-apple-surface: rgba(28, 28, 30, 0.82);
   --font-display: "Press Start 2P", ui-monospace, monospace;
   --font-mono: "VT323", ui-monospace, monospace;
+  --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.25rem;
-  --background: oklch(0.14 0.04 285);
-  --foreground: oklch(0.97 0.02 200);
-  --card: oklch(0.19 0.05 285);
-  --card-foreground: oklch(0.97 0.02 200);
-  --popover: oklch(0.19 0.05 285);
-  --popover-foreground: oklch(0.97 0.02 200);
+  --radius: 0.75rem;
+  --background: oklch(0.12 0.03 275);
+  --foreground: oklch(0.98 0.01 220);
+  --card: oklch(0.16 0.04 280);
+  --card-foreground: oklch(0.98 0.01 220);
+  --popover: oklch(0.16 0.04 280);
+  --popover-foreground: oklch(0.98 0.01 220);
   --primary: oklch(0.75 0.28 330);
   --primary-foreground: oklch(0.1 0.02 285);
   --secondary: oklch(0.78 0.19 200);
   --secondary-foreground: oklch(0.1 0.02 285);
-  --muted: oklch(0.25 0.04 285);
-  --muted-foreground: oklch(0.7 0.04 260);
+  --muted: oklch(0.22 0.03 280);
+  --muted-foreground: oklch(0.72 0.02 260);
   --accent: oklch(0.85 0.22 100);
   --accent-foreground: oklch(0.1 0.02 285);
   --destructive: oklch(0.65 0.28 20);
   --destructive-foreground: oklch(0.98 0.02 200);
-  --border: oklch(0.3 0.06 285);
-  --input: oklch(0.3 0.06 285);
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.14);
   --ring: oklch(0.75 0.28 330);
   --neon-pink: oklch(0.75 0.28 330);
   --neon-cyan: oklch(0.85 0.18 200);
@@ -60,40 +63,144 @@
   --neon-green: oklch(0.85 0.24 145);
 }
 
-.dark { --background: oklch(0.12 0.04 285); }
+.dark { --background: oklch(0.10 0.03 275); }
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { height: 100%; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-apple);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
   body {
     background:
-      radial-gradient(ellipse at top, oklch(0.22 0.1 300) 0%, transparent 60%),
-      radial-gradient(ellipse at bottom, oklch(0.18 0.12 200) 0%, transparent 60%),
+      radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255, 62, 165, 0.12) 0%, transparent 65%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(34, 226, 255, 0.10) 0%, transparent 60%),
+      radial-gradient(circle at 20% 40%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
       var(--color-background);
     background-attachment: fixed;
     color: var(--color-foreground);
-    font-family: var(--font-mono);
+    overflow-x: hidden;
   }
 }
 
+/* ============================================================
+ * Apple Liquid Glass & Material Layer Styles
+ * ============================================================ */
+
+@utility apple-glass {
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  background: rgba(18, 18, 22, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+}
+
+@utility apple-glass-header {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(12, 12, 16, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+@utility apple-glass-card {
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(24, 24, 28, 0.60);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+}
+
+@utility apple-glass-pill {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+@utility apple-glass-pill-active {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+}
+
+@utility apple-specular-edge {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================
+ * Apple Fluid Motion & Feedback
+ * ============================================================ */
+
+.apple-interactive {
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.apple-interactive:hover {
+  transform: scale(1.02);
+}
+
+.apple-interactive:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* Keycap Apple Style */
+.apple-keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-apple);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* Neon Glow Utilities */
 @utility text-glow-pink {
   color: var(--neon-pink);
-  text-shadow: 0 0 8px var(--neon-pink), 0 0 20px var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 62, 165, 0.65), 0 0 24px rgba(255, 62, 165, 0.35);
 }
 @utility text-glow-cyan {
   color: var(--neon-cyan);
-  text-shadow: 0 0 8px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(34, 226, 255, 0.65), 0 0 24px rgba(34, 226, 255, 0.35);
 }
 @utility text-glow-yellow {
   color: var(--neon-yellow);
-  text-shadow: 0 0 8px var(--neon-yellow), 0 0 20px var(--neon-yellow);
+  text-shadow: 0 0 10px rgba(255, 233, 74, 0.65), 0 0 24px rgba(255, 233, 74, 0.35);
+}
+@utility text-glow-green {
+  color: var(--neon-green);
+  text-shadow: 0 0 10px rgba(92, 255, 138, 0.65), 0 0 24px rgba(92, 255, 138, 0.35);
 }
 
 @utility font-display {
   font-family: var(--font-display);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
+@utility font-apple {
+  font-family: var(--font-apple);
+}
+
+/* Scanlines Effect for Retro Arcade Texture */
 @keyframes scanlines {
   0% { background-position: 0 0; }
   100% { background-position: 0 8px; }
@@ -110,9 +217,20 @@
     to bottom,
     transparent 0,
     transparent 2px,
-    rgba(0,0,0,0.15) 2px,
-    rgba(0,0,0,0.15) 4px
+    rgba(0,0,0,0.12) 2px,
+    rgba(0,0,0,0.12) 4px
   );
   mix-blend-mode: overlay;
-  animation: scanlines 1.2s linear infinite;
+  animation: scanlines 1.6s linear infinite;
+  border-radius: inherit;
+}
+
+/* Pulse breathing effect */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.03); }
+}
+
+.apple-ambient-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
 }
