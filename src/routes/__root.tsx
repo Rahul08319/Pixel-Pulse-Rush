@@ -11,27 +11,11 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import PixelPulseRush from "@/components/PixelPulseRush";
 
 function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center apple-glass-card p-8">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Game Stage Not Found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The stage you're looking for doesn't exist or has ended.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="apple-interactive inline-flex items-center justify-center rounded-xl bg-[var(--color-apple-blue)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20"
-          >
-            Return to Game
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  // Pure arcade machine fallback: always render the arcade game regardless of subfolder or path
+  return <PixelPulseRush />;
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
@@ -61,7 +45,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Restart Game
           </button>
           <a
-            href="/"
+            href="./"
             className="apple-interactive inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-white/15"
           >
             Arcade Lobby

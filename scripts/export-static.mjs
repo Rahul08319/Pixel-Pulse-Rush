@@ -35,6 +35,21 @@ async function exportStatic() {
     fs.copyFileSync(path.resolve(srcAssetsDir, file), path.resolve(destAssetsDir, file));
   }
 
+  // Patch client JS bundles so TanStack Router dynamically resolves basepath on GitHub Pages subpaths
+  const jsFiles = fs.readdirSync(destAssetsDir).filter((f) => f.endsWith(".js"));
+  for (const jsFile of jsFiles) {
+    const fullPath = path.resolve(destAssetsDir, jsFile);
+    let code = fs.readFileSync(fullPath, "utf-8");
+    if (code.includes("basepath:``")) {
+      code = code.replace(
+        /basepath:``/g,
+        'basepath:(typeof window<"u"&&/pixel-pulse-rush/i.test(window.location.pathname)?window.location.pathname.match(/^\\/[^/]+/)[0]:"")'
+      );
+      fs.writeFileSync(fullPath, code, "utf-8");
+      console.log(`Patched dynamic basepath in ${jsFile}`);
+    }
+  }
+
   // Write index.html and 404.html (for GitHub Pages SPA routing fallback)
   fs.writeFileSync(path.resolve(distDir, "index.html"), html, "utf-8");
   fs.writeFileSync(path.resolve(distDir, "404.html"), html, "utf-8");

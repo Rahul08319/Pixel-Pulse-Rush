@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    define: {
+      "process.env.TSS_ROUTER_BASEPATH":
+        "(typeof window !== 'undefined' && /^\\/pixel-pulse-rush/i.test(window.location.pathname) ? window.location.pathname.match(/^\\/[^/]+/)[0] : '')",
+    },
+  },
 });
