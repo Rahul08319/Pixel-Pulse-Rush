@@ -13,10 +13,10 @@
 <br/>
 
 <p align="center">
-  <b>Pixel Pulse Rush</b> is a high-speed, 4-lane neon rhythm game featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, fluid spring micro-interactions, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
+  <b>Pixel Pulse Rush</b> is a high-speed, 4-lane neon rhythm game featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, fluid spring micro-interactions, beat timing drift correction, cloud reliability telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
 </p>
 
-[🎮 Live Experience](#-gameplay--controls) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [🎵 Procedural Audio](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
+[🎮 Live Experience](#-gameplay--controls) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
 
 ---
 
@@ -29,9 +29,11 @@
 - **💎 Apple Liquid Glass Aesthetic**: Multi-layered frosted glass vibrancy (`backdrop-blur-28px saturate-190%`), specular edge reflections, and restrained two-layer functional hierarchy conforming to Apple HIG.
 - **⚡ Fluid Physical Motion**: Zero-latency pointer-down response (`scale(0.97)` active states), interruptible transitions, Apple-style segmented difficulty controls, and haptic Taptic feedback.
 - **🧠 TypeSafe™ System One Intelligence**: Programmable common sense running over player telemetry streams—featuring `Score`, `Noul`, and `Choice` primitives for jitter analysis, panic detection, flow state scoring, and dynamic audio/difficulty routing.
+- **⏱️ Beat Timing Drift Correction**: Zero-jitter timeline reconciliation after short or long pauses—prevents note desync and false flatlines when resuming.
+- **📊 Cross-Session Cloud Save Analytics**: Full instrumentation of retry attempts, backoff timings, payload sizes, and failure reasons stored across sessions.
+- **📋 One-Tap Debug State Export**: Instant JSON snapshot export of retry queues, analytics logs, and runtime diagnostics to the system clipboard.
+- **🔄 YouTube & Visibility Coordination**: Symmetrical state machine coordinating `document.visibilitychange` with YouTube Playables `system.onPause` / `system.onResume`.
 - **🎹 100% Procedural Web Audio Engine**: Every run generates a unique chiptune melody and harmony across square, triangle, and noise oscillator channels with real-time FFT frequency visualization.
-- **📱 Responsive & Touch-Optimized**: Native multi-touch gesture gating, focus retention, and mobile viewport calibration with full sub-millisecond audio offset adjustment.
-- **☁️ Production-Grade Cloud & Ad Resilience**: Cloud save versioning with migration pipeline (v1 → v2), full-jitter exponential backoff retry queue, and YouTube Playables compliance.
 
 ---
 
@@ -44,7 +46,7 @@ Pixel Pulse Rush translates the physical elegance and material restraint of Appl
 - **Functional Layer**: Controls, navigation bars, modal sheets, and the Telemetry Inspector float above the content using **Liquid Glass** (`rgba(18, 18, 22, 0.72)` with `backdrop-filter: blur(28px) saturate(190%)`), hairline specular edges, and ambient radial diffuse illumination.
 
 ### 2. Apple Segmented Controls & Keycaps
-- **Segmented Difficulty Picker**: Features iOS-style translucent track with smooth pill indicator transitions (`EASY`, `NORMAL`, `HARD`).
+- **Segmented Difficulty Picker**: Features an iOS-style translucent track with smooth pill indicator transitions (`EASY`, `NORMAL`, `HARD`).
 - **Hardware-Feel Keycaps**: Physical-styled `<span class="apple-keycap">` components rendered with subtle top bevels and drop shadows representing the `D`, `F`, `J`, `K` home row keys.
 
 ### 3. Tactile Feedback & Spring Physics
@@ -95,6 +97,37 @@ flowchart TD
 
 ---
 
+## 📊 Reliability, Diagnostics & Pause Coordination
+
+### 1. Cloud Save Retry Analytics Stream
+- **Persistent Ring Buffer**: Telemetry events for `save_queued`, `save_attempt`, `save_success`, `save_retry_scheduled`, and `save_abandoned` are stored across sessions in `localStorage` under `ppr:analytics:cloud_save:v1`.
+- **Full-Jitter Exponential Backoff**: Prevents hammering YouTube storage endpoints on rate-limits, tracking retry countdowns and failure causes.
+- **Custom Event Dispatch**: Emits `ppr:cloud_save_analytics` on `window` for external telemetry listeners.
+
+### 2. One-Tap Debug State JSON Export
+- Integrated directly into the `DebugOverlay` (` ` ` key or `?debug=1` parameter).
+- Tap **📋 Copy JSON** to generate and copy a complete diagnostic manifest containing:
+  - Timestamp, user agent, URL, and device pixel ratio
+  - Cloud schema version, migration status, and save queue depth
+  - Cross-session analytics summary and recent event histories
+  - Ad status, last error, and error log buffer
+
+### 3. Beat Timing Drift Correction
+- When the game pauses, the engine records exact audio clock and performance timestamps (`pauseAudioTime`, `pauseWallTime`).
+- On unpause, `unpause()` calculates clock deviation `drift = ctx.currentTime - pauseAudioTime`.
+- If audio time advanced during pause (e.g. tab suspension or background throttling):
+  - Procedural beat start time shifts: `startTime += drift`
+  - In-flight unjudged notes shift: `spawnAt += drift`, `hitAt += drift`
+  - `nextBeat` schedule index is automatically aligned to prevent burst-scheduling of past notes.
+
+### 4. Visibility & YouTube Playables Coordination
+A unified state machine coordinates browser tab changes with YouTube Playables lifecycle:
+- **Tab Hidden (`document.hidden = true`)**: Gameplay automatically pauses, AudioContext suspends, and audio gain is silenced.
+- **Tab Visible (`document.hidden = false`)**: If the pause was triggered automatically by visibility (and YouTube is not actively holding pause), gameplay and audio unpause seamlessly with drift correction.
+- **YouTube Playables (`onPause` / `onResume`)**: Coordinates with visibility so playback resumes only when both YouTube environment and document visibility allow it.
+
+---
+
 ## 🕹️ Controls & Calibration
 
 | Input | Desktop | Mobile / Touch | Action |
@@ -106,7 +139,7 @@ flowchart TD
 | **Start / Restart** | <kbd>SPACE</kbd> | Press Start Button | Launch procedural track run |
 | **Pause / Resume** | <kbd>ESC</kbd> or <kbd>P</kbd> | Tap Pause Button | Toggle game pause |
 | **AI Inspector** | Tap Neural Pill | Tap Neural Pill | Open TypeSafe System One Inspector |
-| **Debug Overlay** | <kbd>`</kbd> (Backtick) | `?debug=1` parameter | Diagnostics, cloud queue & FPS metrics |
+| **Debug Overlay** | <kbd>`</kbd> (Backtick) | `?debug=1` parameter | Diagnostics, cloud queue, JSON export & FPS metrics |
 
 ### Hardware Audio Calibration
 Tap the **CALIBRATE** button on the home screen to access the precision audio latency offset tuner. Tap in sync with the audible rhythm beeps to calculate and persist hardware offset (`-150ms` to `+150ms`) in `localStorage`.
@@ -127,25 +160,26 @@ Pixel Pulse Rush includes a custom Web Audio API chiptune synthesis engine:
 
 ```text
 Pixel-Pulse-Rush/
-├── public/                     # Static assets & icons
+├── public/                         # Static assets & icons
 ├── src/
 │   ├── components/
-│   │   ├── PixelPulseRush.tsx          # Main game engine, canvas render loop & Apple UI
-│   │   ├── TypeSafeNeuralInspector.tsx # Liquid Glass TypeSafe System One modal
-│   │   └── ui/                         # Reusable Radix & Tailwind components
+│   │   ├── PixelPulseRush.tsx              # Main game engine, canvas render loop, pause coordination & Apple UI
+│   │   ├── TypeSafeNeuralInspector.tsx     # Liquid Glass TypeSafe System One modal
+│   │   └── ui/                             # Reusable Radix & Tailwind components
 │   ├── lib/
-│   │   ├── typesafe-ai-routing.ts      # TypeSafe System One Jev model evaluation & routing logic
-│   │   ├── ytgame.ts                   # YouTube Playables SDK & cloud save wrapper
-│   │   ├── lovable-error-reporting.ts  # Runtime diagnostic logging
-│   │   └── utils.ts                    # Classnames & styling helpers
+│   │   ├── cloud-save-analytics.ts         # Cloud save retry telemetry, backoff tracking & persistent logging
+│   │   ├── typesafe-ai-routing.ts          # TypeSafe System One Jev model evaluation & routing logic
+│   │   ├── ytgame.ts                       # YouTube Playables SDK & cloud save wrapper
+│   │   ├── lovable-error-reporting.ts      # Runtime diagnostic logging
+│   │   └── utils.ts                        # Classnames & styling helpers
 │   ├── routes/
-│   │   ├── __root.tsx                  # Root shell with Apple web-app metadata & fonts
-│   │   └── index.tsx                   # Index route mounting PixelPulseRush
-│   └── styles.css                      # Apple Design System tokens, Liquid Glass & neon utilities
-├── bunfig.toml                 # Bun configuration
-├── package.json                # Project dependencies & scripts
-├── tsconfig.json               # TypeScript configuration
-└── vite.config.ts              # Vite & TanStack Router bundler config
+│   │   ├── __root.tsx                      # Root shell with Apple web-app metadata & fonts
+│   │   └── index.tsx                       # Index route mounting PixelPulseRush
+│   └── styles.css                          # Apple Design System tokens, Liquid Glass & neon utilities
+├── bunfig.toml                     # Bun configuration
+├── package.json                    # Project dependencies & scripts
+├── tsconfig.json                   # TypeScript configuration
+└── vite.config.ts                  # Vite & TanStack Router bundler config
 ```
 
 ---

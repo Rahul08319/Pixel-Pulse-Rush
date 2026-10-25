@@ -7,6 +7,12 @@ import {
   type PlayerSessionTelemetry,
   type TypeSafeEvaluationReport,
 } from "@/lib/typesafe-ai-routing";
+import {
+  trackCloudSaveEvent,
+  getCloudSaveAnalyticsSummary,
+  getAllCloudSaveAnalyticsEvents,
+  type CloudSaveAnalyticsSummary,
+} from "@/lib/cloud-save-analytics";
 import { TypeSafeNeuralInspector } from "@/components/TypeSafeNeuralInspector";
 import {
   Brain,
@@ -166,6 +172,7 @@ type DebugInfo = {
   saveRetry: SaveRetryState;
   lastError: string | null;
   errorLog: DebugLogEntry[];
+  cloudAnalytics: CloudSaveAnalyticsSummary;
 };
 
 type MigrationStatus =
@@ -509,8 +516,13 @@ class ChiptuneEngine {
     this.runLoop();
   }
 
+  pauseAudioTime = 0;
+  pauseWallTime = 0;
+
   pause() {
     this.running = false;
+    this.pauseAudioTime = this.ctx.currentTime;
+    this.pauseWallTime = performance.now();
     try {
       this.ctx.suspend();
     } catch {
@@ -518,14 +530,35 @@ class ChiptuneEngine {
     }
   }
 
-  async unpause() {
+  async unpause(): Promise<number> {
     try {
       if (this.ctx.state !== "running") await this.ctx.resume();
     } catch {
       /* ignore */
     }
     this.running = true;
+
+    // Measure beat timing drift during pause
+    const resumedAudioTime = this.ctx.currentTime;
+    let drift = 0;
+    if (this.pauseAudioTime > 0) {
+      drift = Math.max(0, resumedAudioTime - this.pauseAudioTime);
+    }
+
+    // Shift procedural timeline start so notes and beats align to resumed audio clock
+    if (drift > 0.005) {
+      this.startTime += drift;
+    }
+
+    // Guard against burst scheduling: ensure nextBeat never lags behind current audio time
+    const currentAudioTime = this.ctx.currentTime;
+    const currentBeatFromStart = (currentAudioTime - this.startTime) / this.beatDur;
+    if (this.nextBeat < currentBeatFromStart) {
+      this.nextBeat = Math.max(this.nextBeat, Math.ceil(currentBeatFromStart));
+    }
+
     this.runLoop();
+    return drift;
   }
 
   stop() {
@@ -630,10 +663,11 @@ export default function PixelPulseRush() {
   //  - null         : nothing to say
   const [interstitialHint, setInterstitialHint] = useState<InterstitialHint>(null);
 
-  // Playables lifecycle: whether YouTube currently considers us backgrounded,
-  // and whether *YouTube* (not the player) triggered the current pause.
+  // Playables & Visibility lifecycle: whether YouTube currently considers us backgrounded,
+  // and whether YouTube or document.visibilityState triggered the current pause.
   const ytPausedRef = useRef(false);
   const ytAutoPausedRef = useRef(false);
+  const visibilityAutoPausedRef = useRef(false);
 
   // ---------- Hidden debug overlay ----------
   // Toggle with backtick (`) or by appending ?debug=1 to the URL.
@@ -650,6 +684,7 @@ export default function PixelPulseRush() {
     saveRetry: { state: "idle", attempts: 0, maxAttempts: MAX_SAVE_ATTEMPTS, nextAttemptAt: null },
     lastError: null,
     errorLog: [],
+    cloudAnalytics: getCloudSaveAnalyticsSummary(),
   }));
   const patchDebug = useCallback((p: Partial<DebugInfo>) => {
     setDebug((d) => ({ ...d, ...p }));
@@ -760,16 +795,33 @@ export default function PixelPulseRush() {
         return;
       }
       flushingRef.current = true;
+      trackCloudSaveEvent({
+        type: "save_attempt",
+        attempt: q.attempts + 1,
+        maxAttempts: MAX_SAVE_ATTEMPTS,
+        inPlayables: ytg.inPlayablesEnv(),
+        payloadSize: q.payload.length,
+      });
+
       const res = await ytg.saveCloudDataStrict(q.payload);
       flushingRef.current = false;
       if (res.ok) {
         writeQueue(null);
+        trackCloudSaveEvent({
+          type: "save_success",
+          attempt: q.attempts + 1,
+          maxAttempts: MAX_SAVE_ATTEMPTS,
+          inPlayables: ytg.inPlayablesEnv(),
+          payloadSize: q.payload.length,
+          note: res.noop ? "noop (outside Playables)" : "flushed",
+        });
         patchDebug({
           lastSave: {
             ok: true,
             note: res.noop ? "noop (outside Playables)" : "flushed",
             at: Date.now(),
           },
+          cloudAnalytics: getCloudSaveAnalyticsSummary(),
         });
         publishRetryState(null);
         return;
@@ -784,6 +836,28 @@ export default function PixelPulseRush() {
         nextAttemptAt: abandoned ? 0 : Date.now() + delay,
       };
       writeQueue(bumped);
+
+      if (abandoned) {
+        trackCloudSaveEvent({
+          type: "save_abandoned",
+          attempt: attempts,
+          maxAttempts: MAX_SAVE_ATTEMPTS,
+          errorReason: res.error ?? "save failed permanently",
+          inPlayables: ytg.inPlayablesEnv(),
+          payloadSize: q.payload.length,
+        });
+      } else {
+        trackCloudSaveEvent({
+          type: "save_retry_scheduled",
+          attempt: attempts,
+          maxAttempts: MAX_SAVE_ATTEMPTS,
+          backoffDelayMs: delay,
+          errorReason: res.error ?? "save failed, scheduled backoff",
+          inPlayables: ytg.inPlayablesEnv(),
+          payloadSize: q.payload.length,
+        });
+      }
+
       patchDebug({
         lastSave: {
           ok: false,
@@ -793,6 +867,7 @@ export default function PixelPulseRush() {
           at: Date.now(),
         },
         lastError: res.error ?? "save failed",
+        cloudAnalytics: getCloudSaveAnalyticsSummary(),
       });
       publishRetryState(bumped);
       if (!res.noop) ytg.logError();
@@ -804,6 +879,13 @@ export default function PixelPulseRush() {
     async (payload: string) => {
       // Newest wins — overwrite any queued payload with fresher stats and
       // reset the backoff, since this is a brand new save attempt.
+      trackCloudSaveEvent({
+        type: "save_queued",
+        attempt: 0,
+        maxAttempts: MAX_SAVE_ATTEMPTS,
+        inPlayables: ytg.inPlayablesEnv(),
+        payloadSize: payload.length,
+      });
       const q: QueuedSave = { payload, queuedAt: Date.now(), attempts: 0, nextAttemptAt: 0 };
       writeQueue(q);
       publishRetryState(q);
@@ -981,17 +1063,21 @@ export default function PixelPulseRush() {
           /* ignore */
         }
       };
-      if (ytAutoPausedRef.current && stateRef.current === "paused") {
+      // Auto-resume gameplay if YouTube triggered pause AND document is visible
+      if (
+        (ytAutoPausedRef.current || visibilityAutoPausedRef.current) &&
+        stateRef.current === "paused" &&
+        !document.hidden
+      ) {
         ytAutoPausedRef.current = false;
-        void eng?.unpause().then(() => {
+        visibilityAutoPausedRef.current = false;
+        void resumeGame().then(() => {
           restoreGain();
-          stateRef.current = "playing";
-          setState("playing");
         });
         return;
       }
       // Not mid-run: just bring the audio graph back online for menus/SFX.
-      if (stateRef.current !== "paused") {
+      if (stateRef.current !== "paused" && !document.hidden) {
         void eng?.unpause().then(restoreGain);
       } else {
         restoreGain();
@@ -1202,7 +1288,16 @@ export default function PixelPulseRush() {
 
   const resumeGame = useCallback(async () => {
     if (stateRef.current !== "paused") return;
-    await engineRef.current?.unpause();
+    const drift = (await engineRef.current?.unpause()) ?? 0;
+    if (drift > 0.005) {
+      // Beat timing drift correction: shift all in-flight notes by the exact audio clock drift
+      for (const n of notesRef.current) {
+        if (!n.judged) {
+          n.spawnAt += drift;
+          n.hitAt += drift;
+        }
+      }
+    }
     stateRef.current = "playing";
     setState("playing");
   }, []);
@@ -1345,14 +1440,56 @@ export default function PixelPulseRush() {
     return () => window.removeEventListener("keydown", handler);
   }, [tapLane, startGame, pauseGame, resumeGame]);
 
-  // Auto-pause on tab hide
+  // Visibility & YouTube coordination: pause/resume the game and AudioContext exactly
+  // when the browser tab or YouTube environment suspends or resumes playback.
   useEffect(() => {
     const onVis = () => {
-      if (document.hidden && stateRef.current === "playing") pauseGame();
+      const eng = engineRef.current;
+      if (document.hidden) {
+        // Tab backgrounded: pause gameplay and suspend audio context
+        if (stateRef.current === "playing") {
+          visibilityAutoPausedRef.current = true;
+          stateRef.current = "paused";
+          setState("paused");
+        }
+        if (eng) {
+          try {
+            eng.master.gain.value = 0;
+            eng.pause();
+          } catch {
+            /* ignore */
+          }
+        }
+      } else {
+        // Tab restored to foreground
+        const restoreGain = () => {
+          if (!eng) return;
+          try {
+            eng.master.gain.value = mutedRef.current ? 0 : 0.35;
+          } catch {
+            /* ignore */
+          }
+        };
+
+        // If paused automatically by visibility (and YouTube is not actively pausing)
+        if (
+          visibilityAutoPausedRef.current &&
+          stateRef.current === "paused" &&
+          !ytPausedRef.current
+        ) {
+          visibilityAutoPausedRef.current = false;
+          void resumeGame().then(() => {
+            restoreGain();
+          });
+        } else if (stateRef.current !== "paused" && !ytPausedRef.current) {
+          void eng?.unpause().then(restoreGain);
+        }
+      }
     };
+
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
-  }, [pauseGame]);
+  }, [resumeGame]);
 
   // main render loop
   useEffect(() => {
@@ -2585,21 +2722,74 @@ function DebugOverlay({
   info: DebugInfo;
   onClose: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
   if (!open) return null;
   const fmt = (t: number) =>
     t ? new Date(t).toLocaleTimeString(undefined, { hour12: false }) : "—";
+
+  const exportDebugJson = () => {
+    try {
+      const blob = {
+        exportedAt: new Date().toISOString(),
+        cloudSave: {
+          schemaVersion: info.cloudSchemaVersion,
+          sourceVersion: info.cloudSourceVersion,
+          migrationStatus: info.cloudMigrationStatus,
+          lastSave: info.lastSave,
+          retryQueue: {
+            depth: info.saveQueueDepth,
+            attempts: info.saveQueueAttempts,
+            retryState: info.saveRetry,
+          },
+        },
+        cloudAnalytics: info.cloudAnalytics ?? getCloudSaveAnalyticsSummary(),
+        recentEvents: getAllCloudSaveAnalyticsEvents(),
+        adState: {
+          lastAd: info.lastAd,
+        },
+        environment: {
+          inPlayables: info.inPlayables,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+          url: typeof window !== "undefined" ? window.location.href : "",
+          visibilityState: typeof document !== "undefined" ? document.visibilityState : "unknown",
+        },
+        diagnostics: {
+          lastError: info.lastError,
+          errorLog: info.errorLog,
+        },
+      };
+
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(JSON.stringify(blob, null, 2));
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy debug JSON:", err);
+    }
+  };
+
   return (
     <div className="pointer-events-none absolute top-2 right-2 z-30 max-w-[280px] text-[10px] font-mono leading-tight">
       <div className="pointer-events-auto rounded border border-[var(--neon-cyan)]/60 bg-black/85 p-2 text-white/85 shadow-[0_0_18px_-4px_var(--neon-cyan)]">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-white/10">
           <span className="text-glow-cyan font-display text-[9px]">DEBUG</span>
-          <button
-            onClick={onClose}
-            className="text-white/60 hover:text-white text-[10px] px-1"
-            aria-label="Close debug overlay"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={exportDebugJson}
+              className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white text-[9px] border border-white/20 font-mono transition-colors"
+              title="Copy current debug state and retry queue as JSON blob"
+            >
+              {copied ? "✓ Copied!" : "📋 Copy JSON"}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-white/60 hover:text-white text-[10px] px-1"
+              aria-label="Close debug overlay"
+            >
+              ×
+            </button>
+          </div>
         </div>
         <div>
           cloud v: <span className="text-glow-yellow">{info.cloudSchemaVersion}</span>
@@ -2654,6 +2844,19 @@ function DebugOverlay({
           </span>{" "}
           {info.saveRetry.attempts}/{info.saveRetry.maxAttempts}
           {info.saveRetry.nextAttemptAt ? ` · next ${fmt(info.saveRetry.nextAttemptAt)}` : ""}
+        </div>
+        <div className="mt-1 border-t border-white/10 pt-1">
+          <div className="text-white/50 text-[9px]">analytics (cross-session):</div>
+          <div>
+            attempts: <span className="text-glow-cyan">{info.cloudAnalytics?.totalAttempts ?? 0}</span> ·
+            succ: <span className="text-glow-green">{info.cloudAnalytics?.successfulSaves ?? 0}</span> ·
+            retries: <span className="text-glow-yellow">{info.cloudAnalytics?.retriesScheduled ?? 0}</span>
+          </div>
+          {info.cloudAnalytics?.lastFailureReason && (
+            <div className="text-glow-pink truncate text-[9px]">
+              fail: {info.cloudAnalytics.lastFailureReason}
+            </div>
+          )}
         </div>
         <div className="mt-1 border-t border-white/10 pt-1 text-glow-pink break-words">
           err: {info.lastError ?? "—"}
