@@ -17,16 +17,16 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center apple-glass-card p-8">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Game Stage Not Found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          The stage you're looking for doesn't exist or has ended.
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="apple-interactive inline-flex items-center justify-center rounded-xl bg-[var(--color-apple-blue)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20"
           >
-            Return Home
+            Return to Game
           </Link>
         </div>
       </div>
@@ -45,10 +45,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center apple-glass-card p-8">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Game Runtime Interrupted
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          A game engine error occurred. You can restart or return to the main arcade lobby.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
@@ -58,13 +58,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="apple-interactive inline-flex items-center justify-center rounded-xl bg-[var(--color-apple-blue)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20"
           >
-            Try again
+            Restart Game
           </button>
           <a
             href="/"
             className="apple-interactive inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-white/15"
           >
-            Return Home
+            Arcade Lobby
           </a>
         </div>
       </div>
@@ -76,24 +76,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Pixel Pulse Rush — Neon Chiptune Rhythm Rush" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
+      { title: "Pixel Pulse Rush — Neon Arcade Rhythm Game" },
       {
         name: "description",
         content:
-          "Neon chiptune rhythm game engineered with Apple Liquid Glass aesthetic and TypeSafe AI System One adaptive rhythm evaluation.",
+          "High-speed neon arcade rhythm game featuring procedural chiptune audio, Apple Liquid Glass aesthetic, and real-time TypeSafe AI System One routing.",
       },
-      { property: "og:title", content: "Pixel Pulse Rush" },
+      { property: "og:title", content: "Pixel Pulse Rush — Neon Arcade Rhythm Game" },
       {
         property: "og:description",
         content:
-          "Neon chiptune rhythm game engineered with Apple Liquid Glass aesthetic and TypeSafe AI System One adaptive rhythm evaluation.",
+          "High-speed neon arcade rhythm game featuring procedural chiptune audio, Apple Liquid Glass aesthetic, and real-time TypeSafe AI System One routing.",
       },
-      { property: "og:type", content: "website" },
+      { property: "og:type", content: "game" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "theme-color", content: "#0c0c10" },
+      { name: "theme-color", content: "#06040d" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -119,7 +119,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <script src="https://www.youtube.com/game_api/v1" async={false} />
         <HeadContent />
       </head>
-      <body suppressHydrationWarning className="antialiased selection:bg-[var(--neon-pink)] selection:text-black">
+      <body suppressHydrationWarning className="antialiased selection:bg-[var(--neon-pink)] selection:text-black overflow-hidden bg-[#06040d]">
         {children}
         <Scripts />
       </body>

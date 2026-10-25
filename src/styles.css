@@ -69,22 +69,27 @@
   * { border-color: var(--color-border); }
   html, body {
     height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
     font-family: var(--font-apple);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
   body {
     background:
       radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255, 62, 165, 0.14) 0%, transparent 65%),
       radial-gradient(ellipse 80% 50% at 50% 100%, rgba(34, 226, 255, 0.12) 0%, transparent 60%),
       radial-gradient(circle at 20% 40%, rgba(138, 43, 226, 0.10) 0%, transparent 50%),
-      var(--color-background);
+      #06040d;
     background-attachment: fixed;
     color: var(--color-foreground);
-    overflow-x: hidden;
+    overflow: hidden;
   }
 }
 
@@ -270,4 +275,57 @@
   );
   background-size: 200% 100%;
   animation: shimmerPass 3s infinite linear;
+}
+
+
+/* ============================================================
+ * Physical Arcade Push Button Deck & Cabinet Styling
+ * ============================================================ */
+
+.arcade-button {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(20, 20, 28, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 5px 0 0 rgba(0, 0, 0, 0.75), 0 8px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 60ms cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.arcade-button:active, .arcade-button.arcade-pressed {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.arcade-button-pink {
+  border-color: rgba(255, 62, 165, 0.4);
+}
+.arcade-button-pink:active, .arcade-button-pink.arcade-pressed {
+  background: linear-gradient(180deg, rgba(255, 62, 165, 0.4) 0%, rgba(255, 62, 165, 0.15) 100%);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.75), 0 0 24px rgba(255, 62, 165, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.arcade-button-cyan {
+  border-color: rgba(34, 226, 255, 0.4);
+}
+.arcade-button-cyan:active, .arcade-button-cyan.arcade-pressed {
+  background: linear-gradient(180deg, rgba(34, 226, 255, 0.4) 0%, rgba(34, 226, 255, 0.15) 100%);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.75), 0 0 24px rgba(34, 226, 255, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.arcade-button-yellow {
+  border-color: rgba(255, 233, 74, 0.4);
+}
+.arcade-button-yellow:active, .arcade-button-yellow.arcade-pressed {
+  background: linear-gradient(180deg, rgba(255, 233, 74, 0.4) 0%, rgba(255, 233, 74, 0.15) 100%);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.75), 0 0 24px rgba(255, 233, 74, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.arcade-button-green {
+  border-color: rgba(92, 255, 138, 0.4);
+}
+.arcade-button-green:active, .arcade-button-green.arcade-pressed {
+  background: linear-gradient(180deg, rgba(92, 255, 138, 0.4) 0%, rgba(92, 255, 138, 0.15) 100%);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.75), 0 0 24px rgba(92, 255, 138, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }

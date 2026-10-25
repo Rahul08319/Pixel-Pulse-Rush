@@ -29,6 +29,9 @@ import {
   Gauge,
   Sliders,
   ChevronRight,
+  Gamepad2,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 
 
@@ -651,6 +654,77 @@ export default function PixelPulseRush() {
   const [typeSafeReport, setTypeSafeReport] = useState<TypeSafeEvaluationReport | null>(null);
   const [neuralDrawerOpen, setNeuralDrawerOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
+  const [pressedLanes, setPressedLanes] = useState<boolean[]>([false, false, false, false]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  const playUiSfx = useCallback((type: "click" | "start" | "diff" | "pause") => {
+    if (soundMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = (window as any)._uiAudioCtx || new AudioCtx();
+      (window as any)._uiAudioCtx = ctx;
+      if (ctx.state === "suspended") void ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === "click") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.035);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        osc.start(now);
+        osc.stop(now + 0.035);
+      } else if (type === "start") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554.37, now + 0.05);
+        osc.frequency.setValueAtTime(659.25, now + 0.1);
+        osc.frequency.setValueAtTime(880, now + 0.15);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      } else if (type === "diff") {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(330, now);
+        osc.frequency.exponentialRampToValueAtTime(660, now + 0.05);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === "pause") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+    } catch {
+      /* ignore audio context restrictions before user gesture */
+    }
+  }, [soundMuted]);
 
   const toggleMute = useCallback(() => {
     const next = !mutedRef.current;
@@ -1550,6 +1624,11 @@ export default function PixelPulseRush() {
       const idx = LANE_KEYS.indexOf(k as (typeof LANE_KEYS)[number]);
       if (idx >= 0 && stateRef.current === "playing") {
         e.preventDefault();
+        setPressedLanes((p) => {
+          const next = [...p];
+          next[idx] = true;
+          return next;
+        });
         tapLane(idx);
       } else if (
         e.key === " " &&
@@ -1571,8 +1650,23 @@ export default function PixelPulseRush() {
         resumeGame();
       }
     };
+    const upHandler = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      const idx = LANE_KEYS.indexOf(k as (typeof LANE_KEYS)[number]);
+      if (idx >= 0) {
+        setPressedLanes((p) => {
+          const next = [...p];
+          next[idx] = false;
+          return next;
+        });
+      }
+    };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keyup", upHandler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("keyup", upHandler);
+    };
   }, [tapLane, startGame, pauseGame, resumeGame]);
 
   // Visibility & YouTube coordination: pause/resume the game and AudioContext exactly
@@ -2393,7 +2487,7 @@ export default function PixelPulseRush() {
   const diffKeys = useMemo(() => Object.keys(DIFFICULTIES) as Difficulty[], []);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-hidden font-apple">
+    <div className="h-screen w-screen max-h-screen overflow-hidden flex flex-col items-center justify-between p-2 sm:p-3 relative font-apple select-none touch-none bg-[#06040d]">
       {/* Dynamic Apple Spatial Ambient Lighting */}
       <div
         className="apple-ambient-glow fixed -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full opacity-40 blur-[100px] pointer-events-none -z-10"
@@ -2405,62 +2499,82 @@ export default function PixelPulseRush() {
         }}
       />
 
-      {/* Apple Liquid Glass Top Navigation Bar */}
-      <header className="w-full max-w-[560px] apple-glass rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between mb-3 border border-white/12 shadow-xl shadow-black/40">
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-[var(--neon-pink)] via-[#7b2cbf] to-[#0066cc] p-0.5 shadow-md shadow-pink-500/25">
-            <span className="text-white text-xs font-display">⚡</span>
+      {/* Apple Liquid Glass Arcade Top Bar */}
+      <div className="w-full max-w-[500px] apple-glass rounded-2xl px-3 py-1.5 flex items-center justify-between border border-white/12 shadow-xl shadow-black/40 z-20">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-7 h-7 rounded-xl bg-gradient-to-tr from-[var(--neon-pink)] via-[#7b2cbf] to-[#0066cc] p-0.5 shadow-md shadow-pink-500/25">
+            <Gamepad2 className="w-4 h-4 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-bold text-white text-sm sm:text-base tracking-tight leading-none font-apple">
+              <span className="font-bold text-white text-xs sm:text-sm tracking-tight leading-none font-apple">
                 PIXEL PULSE RUSH
-              </h1>
-              <span className="hidden sm:inline-block px-1.5 py-0.5 text-[8px] font-mono uppercase rounded-full bg-white/10 text-white/70 border border-white/10">
-                AI ENGINE
+              </span>
+              <span className="px-1.5 py-0.5 text-[8px] font-mono uppercase rounded-full bg-pink-500/20 text-pink-300 border border-pink-400/30">
+                ARCADE
               </span>
             </div>
-            <div className="text-[10px] text-white/50 font-apple flex items-center gap-2 mt-0.5">
+            <div className="text-[9px] text-white/50 font-apple flex items-center gap-2 mt-0.5">
               <span>{engineRef.current ? Math.round(engineRef.current.bpm) : DIFFICULTIES[difficulty].bpm} BPM</span>
               <span>·</span>
-              <span>BEST {statsAll[difficulty].bestScore}</span>
+              <span>HI-SCORE {statsAll[difficulty].bestScore}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* TypeSafe Neural Engine Pill */}
           <button
-            onClick={() => setNeuralDrawerOpen(true)}
-            className="apple-interactive flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-[#2997ff] text-xs font-semibold shadow-sm"
+            onClick={() => {
+              playUiSfx("click");
+              setNeuralDrawerOpen(true);
+            }}
+            className="apple-interactive flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-[#2997ff] text-[10px] font-semibold"
             title="Open TypeSafe System One Neural Rhythm Inspector"
           >
             <Brain className="w-3.5 h-3.5 animate-pulse text-[#2997ff]" />
-            <span className="text-[10px] font-apple hidden xs:inline tracking-tight">
-              {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "Neural AI"}
+            <span className="hidden xs:inline">
+              {typeSafeReport ? typeSafeReport.rhythmPrecision.levelName : "AI Router"}
             </span>
+          </button>
+
+          {/* Fullscreen Toggle Button */}
+          <button
+            onClick={() => {
+              playUiSfx("click");
+              toggleFullscreen();
+            }}
+            aria-label={isFullscreen ? "Exit Fullscreen Arcade" : "Enter Fullscreen Arcade"}
+            className="apple-interactive p-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white border border-white/10"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Arcade"}
+          >
+            {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
           </button>
 
           {/* Sound Mute Toggle */}
           <button
-            onClick={toggleMute}
+            onClick={() => {
+              playUiSfx("click");
+              toggleMute();
+            }}
             aria-label={soundMuted ? "Unmute Audio" : "Mute Audio"}
-            className="apple-interactive p-2 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white border border-white/10"
+            className="apple-interactive p-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white border border-white/10"
+            title={soundMuted ? "Unmute Audio" : "Mute Audio"}
           >
-            {soundMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-[#5cff8a]" />}
+            {soundMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-[#5cff8a]" />}
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Main Game Stage Chassis */}
-      <div className="relative w-full max-w-[560px] flex flex-col items-center">
+      <div className="relative w-full max-w-[500px] flex-1 flex flex-col items-center justify-center min-h-0">
         <div
           ref={playSurfaceRef}
           tabIndex={0}
           role="application"
           aria-label="Pixel Pulse Rush play surface"
           style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
-          className="relative w-full aspect-[9/16] rounded-3xl overflow-hidden border border-white/18 scanlines shadow-[0_25px_60px_-10px_rgba(0,0,0,0.95),inset_0_1px_0_0_rgba(255,255,255,0.3)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[#2997ff]"
+          className="relative w-full aspect-[9/16] max-h-[calc(100vh-140px)] rounded-3xl overflow-hidden border border-white/18 scanlines shadow-[0_25px_60px_-10px_rgba(0,0,0,0.95),inset_0_1px_0_0_rgba(255,255,255,0.3)] outline-none select-none touch-none focus-visible:ring-2 focus-visible:ring-[#2997ff]"
         >
           {/* Realistic 8K Curved Arcade Glass Sheen & Vignette */}
           <div className="apple-glass-sheen absolute inset-0 z-10 pointer-events-none" />
@@ -2555,7 +2669,7 @@ export default function PixelPulseRush() {
           {/* Pause button during play */}
           {state === "playing" && (
             <button
-              onClick={pauseGame}
+              onClick={() => { playUiSfx("pause"); pauseGame(); }}
               aria-label="Pause"
               className="apple-interactive absolute top-3 right-3 z-20 font-apple text-[10px] font-semibold px-3 py-1.5 rounded-full bg-black/60 border border-white/20 text-white/90 backdrop-blur-md hover:bg-black/80 flex items-center gap-1"
             >
@@ -2594,7 +2708,7 @@ export default function PixelPulseRush() {
                     {diffKeys.map((k) => (
                       <button
                         key={k}
-                        onClick={() => setDifficulty(k)}
+                        onClick={() => { playUiSfx("diff"); setDifficulty(k); }}
                         className={`apple-interactive flex-1 py-1.5 px-2 rounded-lg text-xs font-apple transition-all duration-150 ${
                           difficulty === k
                             ? "bg-white/20 text-white font-semibold shadow-sm border border-white/25"
@@ -2646,7 +2760,7 @@ export default function PixelPulseRush() {
 
                 {/* Start Button */}
                 <button
-                  onClick={startGame}
+                  onClick={() => { playUiSfx("start"); startGame(); }}
                   className="apple-interactive w-full font-apple font-bold text-xs sm:text-sm py-3 px-6 rounded-xl bg-gradient-to-r from-[var(--neon-pink)] to-[#0066cc] text-white shadow-lg shadow-pink-500/25 hover:brightness-110 active:scale-95 flex items-center justify-center gap-2 mb-3"
                 >
                   <Play className="w-4 h-4 fill-white" />
@@ -2701,7 +2815,7 @@ export default function PixelPulseRush() {
                 </div>
                 <div className="flex flex-col gap-2.5 w-full">
                   <button
-                    onClick={resumeGame}
+                    onClick={() => { playUiSfx("start"); resumeGame(); }}
                     className="apple-interactive font-apple font-bold text-xs py-2.5 px-4 rounded-xl bg-[var(--neon-green)] text-black hover:brightness-110 shadow-lg shadow-green-500/20"
                   >
                     ▶ RESUME
@@ -2935,6 +3049,52 @@ export default function PixelPulseRush() {
 
           <DebugOverlay open={debugOpen} info={debug} onClose={() => setDebugOpen(false)} />
         </div>
+
+        {/* Physical 4-Lane Arcade Push-Button Deck */}
+        <div className="w-full max-w-[500px] grid grid-cols-4 gap-2 px-1 pt-2 pb-0.5 z-20">
+          {Array.from({ length: LANES }).map((_, i) => (
+            <button
+              key={i}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                setPressedLanes((p) => {
+                  const n = [...p];
+                  n[i] = true;
+                  return n;
+                });
+                tapLane(i);
+              }}
+              onPointerUp={() => {
+                setPressedLanes((p) => {
+                  const n = [...p];
+                  n[i] = false;
+                  return n;
+                });
+              }}
+              onPointerLeave={() => {
+                setPressedLanes((p) => {
+                  const n = [...p];
+                  n[i] = false;
+                  return n;
+                });
+              }}
+              aria-label={`Lane ${i + 1} (${LANE_KEYS[i].toUpperCase()})`}
+              className={`arcade-button arcade-button-${["pink", "cyan", "yellow", "green"][i]} ${
+                pressedLanes[i] ? "arcade-pressed" : ""
+              } flex flex-col items-center justify-center py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none touch-none`}
+            >
+              <span
+                className="text-xs sm:text-sm font-black font-mono tracking-wider"
+                style={{ color: LANE_COLORS[i] }}
+              >
+                {LANE_KEYS[i].toUpperCase()}
+              </span>
+              <span className="text-[9px] font-apple text-white/50 tracking-tighter uppercase font-semibold">
+                LANE {i + 1}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* TypeSafe System One Neural Rhythm Inspector Modal */}
@@ -2945,21 +3105,6 @@ export default function PixelPulseRush() {
         currentBpm={engineRef.current ? Math.round(engineRef.current.bpm) : DIFFICULTIES[difficulty].bpm}
         combo={hud.combo}
       />
-
-      {/* Sleek Apple Footer */}
-      <footer className="mt-4 text-xs text-white/50 font-apple text-center max-w-[560px] flex items-center justify-center gap-2.5">
-        <span>Procedural Chiptune</span>
-        <span>·</span>
-        <span>Apple Liquid Glass</span>
-        <span>·</span>
-        <button
-          onClick={() => setNeuralDrawerOpen(true)}
-          className="text-[#2997ff] hover:underline flex items-center gap-1"
-        >
-          <Brain className="w-3 h-3 text-[#2997ff]" />
-          TypeSafe™ System One
-        </button>
-      </footer>
     </div>
   );
 }

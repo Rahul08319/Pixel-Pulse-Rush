@@ -1,7 +1,7 @@
 <div align="center">
 
 # ⚡ PIXEL PULSE RUSH
-### *Neon 8-Bit Chiptune Rhythm Game × Apple Liquid Glass × TypeSafe™ System One AI × 8K Realistic Visuals*
+### *Neon 8-Bit Chiptune Arcade Rhythm Game × Apple Liquid Glass × TypeSafe™ System One AI × 8K Realistic Visuals*
 
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -14,10 +14,10 @@
 <br/>
 
 <p align="center">
-  <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane rhythm game featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, an adaptive <b>Dynamic Island floating HUD</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
+  <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane <b>arcade rhythm game</b> featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, an adaptive <b>Dynamic Island floating HUD</b>, a tactile <b>4-lane arcade push-button deck</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
 </p>
 
-[🎮 Live Experience](#-gameplay--controls) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
+[🎮 Gameplay Controls](#-gameplay--controls) • [🕹️ Arcade Cabinet & Deck](#-physical-arcade-push-button-deck) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio Engine](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
 
 ---
 
@@ -27,6 +27,9 @@
 
 ## 🌟 Highlights
 
+- **🕹️ Dedicated Arcade Game Architecture**: Zero browser scrolling, pure arcade game viewport (`overflow: hidden`), one-tap fullscreen arcade mode, and zero-latency input handling.
+- **🎮 Physical 4-Lane Arcade Push-Button Deck**: Tactile mechanical push buttons (`D`, `F`, `J`, `K`) located directly beneath each lane with spring plunge animations, neon LED underglow, and multi-cadence haptic feedback.
+- **🔊 Synthesized Arcade UI Sound FX**: Procedural Web Audio API sound effects for clicks, game start arpeggios, difficulty switches, and pause dips.
 - **💎 Apple Liquid Glass Aesthetic**: Multi-layered frosted glass vibrancy (`backdrop-blur-32px saturate-200%`), specular edge reflections, and restrained two-layer functional hierarchy conforming to Apple HIG.
 - **🏝️ Apple Dynamic Island HUD**: Adaptive floating pill at the top of the arcade chassis—housing animated 4-band audio waveform dots, real-time score counter, combo badges, and live morphing TypeSafe telemetry badges.
 - **🌌 8K Ultra-Realistic Canvas Graphics**: Multi-pass bloom, 3D cylindrical note capsules with glass specular sheens, physical spark explosions with micro-gravity, shockwave ripples, and an electric laser voltage hitline.
@@ -40,12 +43,15 @@
 
 ---
 
-## 🌌 8K Ultra-Realistic Graphics Engine & VFX
+## 🕹️ Physical Arcade Push-Button Deck & Cabinet
 
-Pixel Pulse Rush renders all gameplay elements onto a high-DPI hardware-accelerated 2D canvas with multi-pass post-processing and physics simulation:
+Pixel Pulse Rush is designed from the ground up as a **pure arcade machine experience**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
+│                 ARCADE TOP HUD (Apple Glass)                │
+│  [🎮] PIXEL PULSE RUSH · 140 BPM   [🧠 AI]  [⛶ MAX]  [🔊]   │
+├─────────────────────────────────────────────────────────────┤
 │               APPLE DYNAMIC ISLAND (TOP HUD)                │
 │    [ ılıl Waveform ]  Locked-In · 12,850 · 24x COMBO        │
 ├─────────────────────────────────────────────────────────────┤
@@ -64,7 +70,24 @@ Pixel Pulse Rush renders all gameplay elements onto a high-DPI hardware-accelera
 ├─────────────────────────────────────────────────────────────┤
 │  ▲ Audio-Reactive Luminescent Aurora Waveform (FFT Bins)   │
 └─────────────────────────────────────────────────────────────┘
+┌──────────────┬──────────────┬──────────────┬────────────────┐
+│   [ D ]      │   [ F ]      │   [ J ]      │    [ K ]       │
+│  LANE 1 PINK │ LANE 2 CYAN  │ LANE 3 YELLOW│  LANE 4 GREEN  │
+│ (LED DECK)   │ (LED DECK)   │ (LED DECK)   │  (LED DECK)    │
+└──────────────┴──────────────┴──────────────┴────────────────┘
 ```
+
+### Dedicated Arcade Cabinet Features:
+1. **Physical Arcade Push-Buttons**: 4 responsive push buttons with spring plunge animations (`translate-y-1`), LED colored backlighting, and instant lane triggering.
+2. **Synchronized Keyboard & Touch Deck**: Pressing `D`, `F`, `J`, `K` on your desktop keyboard or tapping the buttons on a touchscreen physically depresses the on-screen buttons in lockstep.
+3. **No Web Clutter**: The entire viewport is locked (`overflow: hidden`), removing webpage scrollbars, footers, and margins so the player is fully immersed in the rhythm gameplay.
+4. **Arcade Fullscreen Mode**: Tap **⛶ MAX** to expand the game into a true edge-to-edge arcade cabinet.
+
+---
+
+## 🌌 8K Ultra-Realistic Graphics Engine & VFX
+
+Pixel Pulse Rush renders all gameplay elements onto a high-DPI hardware-accelerated 2D canvas with multi-pass post-processing and physics simulation:
 
 ### 1. 3D Cylindrical Note Capsules
 - Notes are drawn using native `ctx.roundRect` capsules with dynamic lighting gradients:
@@ -103,7 +126,7 @@ Pixel Pulse Rush renders all gameplay elements onto a high-DPI hardware-accelera
 
 ## 🎨 Apple Design System & Fluid Motion
 
-Pixel Pulse Rush translates the physical elegance and material restraint of Apple's Human Interface Guidelines (HIG) and WWDC Fluid Interface principles directly to the modern web:
+Pixel Pulse Rush translates the physical elegance and material restraint of Apple's Human Interface Guidelines (HIG) and WWDC Fluid Interface principles directly into game UI:
 
 ### 1. Two-Layer Depth Architecture
 - **Content Layer**: The high-contrast neon arcade canvas, frequency visualizer, and cascading pixel notes reside in a clean, high-visibility dark canvas.
@@ -192,17 +215,18 @@ A unified state machine coordinates browser tab changes with YouTube Playables l
 
 ---
 
-## 🕹️ Controls & Calibration
+## 🕹️ Gameplay & Controls
 
 | Input | Desktop | Mobile / Touch | Action |
 | :---: | :---: | :---: | :--- |
-| **Lane 1** | <kbd>D</kbd> | Tap Lane 1 (Pink) | Hit leftmost cascade notes |
-| **Lane 2** | <kbd>F</kbd> | Tap Lane 2 (Cyan) | Hit center-left notes |
-| **Lane 3** | <kbd>J</kbd> | Tap Lane 3 (Yellow) | Hit center-right notes |
-| **Lane 4** | <kbd>K</kbd> | Tap Lane 4 (Green) | Hit rightmost cascade notes |
+| **Lane 1** | <kbd>D</kbd> | Tap Lane 1 / Push Button | Hit leftmost cascade notes |
+| **Lane 2** | <kbd>F</kbd> | Tap Lane 2 / Push Button | Hit center-left notes |
+| **Lane 3** | <kbd>J</kbd> | Tap Lane 3 / Push Button | Hit center-right notes |
+| **Lane 4** | <kbd>K</kbd> | Tap Lane 4 / Push Button | Hit rightmost cascade notes |
 | **Start / Restart** | <kbd>SPACE</kbd> | Press Start Button | Launch procedural track run |
 | **Pause / Resume** | <kbd>ESC</kbd> or <kbd>P</kbd> | Tap Pause Button | Toggle game pause |
 | **Dynamic Island** | Tap Top Pill | Tap Top Pill | Open TypeSafe System One Inspector |
+| **Fullscreen** | <kbd>F11</kbd> | Tap ⛶ Icon in Top HUD | Toggle Fullscreen Arcade Cabinet |
 | **Debug Overlay** | <kbd>`</kbd> (Backtick) | `?debug=1` parameter | Diagnostics, cloud queue, JSON export & FPS metrics |
 
 ### Hardware Audio Calibration
@@ -217,6 +241,7 @@ Pixel Pulse Rush includes a custom Web Audio API chiptune synthesis engine:
 - **Bassline**: Triangle and sawtooth oscillator driving sub-bass arpeggios synchronized to the track BPM.
 - **Percussion**: White noise burst generator simulating retro 8-bit snare and hi-hats.
 - **Dynamic Filter**: Real-time biquad low-pass filter modulated dynamically by TypeSafe AI flow state judgments.
+- **UI Synthesizer**: Procedural audio blips and arpeggios for menu navigation, difficulty switches, and button pushes.
 
 ---
 
@@ -227,7 +252,7 @@ Pixel-Pulse-Rush/
 ├── public/                         # Static assets & icons
 ├── src/
 │   ├── components/
-│   │   ├── PixelPulseRush.tsx              # Main game engine, 8K canvas render loop, pause coordination & Apple UI
+│   │   ├── PixelPulseRush.tsx              # Arcade game engine, 8K canvas, push-button deck & HUD
 │   │   ├── TypeSafeNeuralInspector.tsx     # Liquid Glass TypeSafe System One modal
 │   │   └── ui/                             # Reusable Radix & Tailwind components
 │   ├── lib/
@@ -237,9 +262,9 @@ Pixel-Pulse-Rush/
 │   │   ├── lovable-error-reporting.ts      # Runtime diagnostic logging
 │   │   └── utils.ts                        # Classnames & styling helpers
 │   ├── routes/
-│   │   ├── __root.tsx                      # Root shell with Apple web-app metadata & fonts
+│   │   ├── __root.tsx                      # Root arcade shell with metadata & fonts
 │   │   └── index.tsx                       # Index route mounting PixelPulseRush
-│   └── styles.css                          # Apple Design System tokens, Liquid Glass & neon utilities
+│   └── styles.css                          # Apple Design System tokens, arcade button deck & neon utilities
 ├── bunfig.toml                     # Bun configuration
 ├── package.json                    # Project dependencies & scripts
 ├── tsconfig.json                   # TypeScript configuration
@@ -265,13 +290,13 @@ cd Pixel-Pulse-Rush
 npm install --legacy-peer-deps
 ```
 
-### Development Server
+### Run the Game
 
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:5173` in your browser.
+Open `http://localhost:5173` in your browser to launch the arcade machine.
 
 ### Production Build
 
