@@ -3,6 +3,7 @@
 # ⚡ PIXEL PULSE RUSH
 ### *Neon 8-Bit Chiptune Arcade Rhythm Game × Apple Liquid Glass × TypeSafe™ System One AI × 8K Realistic Visuals*
 
+[![Play Live on GitHub Pages](https://img.shields.io/badge/PLAY_LIVE-GitHub_Pages-22c55e?style=for-the-badge&logo=github&logoColor=white)](https://rahul08319.github.io/Pixel-Pulse-Rush/)
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![TailwindCSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.2-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -13,11 +14,13 @@
 
 <br/>
 
+## 🕹️ [▶ PLAY LIVE ON GITHUB PAGES NOW](https://rahul08319.github.io/Pixel-Pulse-Rush/) 🕹️
+
 <p align="center">
   <b>Pixel Pulse Rush</b> is an ultra-fast 4-lane <b>arcade rhythm game</b> featuring procedural chiptune audio synthesis, engineered with Apple's signature <b>Liquid Glass design system</b>, a tactile <b>4-lane arcade push-button deck</b>, fluid spring micro-interactions, beat timing drift correction, cross-session cloud telemetry, and real-time cognitive rhythm evaluation powered by <b>TypeSafe™ System One models</b>.
 </p>
 
-[🎮 Gameplay Controls](#-gameplay--controls) • [🕹️ Arcade Cabinet & Deck](#-physical-arcade-push-button-deck) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio Engine](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
+[🚀 Play Live](https://rahul08319.github.io/Pixel-Pulse-Rush/) • [🎮 Gameplay Controls](#-gameplay--controls) • [🕹️ Arcade Cabinet & Deck](#-physical-arcade-push-button-deck--cabinet) • [🌌 8K Realistic Graphics](#-8k-ultra-realistic-graphics-engine--vfx) • [✨ Apple Design System](#-apple-design-system--fluid-motion) • [🧠 TypeSafe AI Architecture](#-typesafe-ai-system-one-architecture) • [📊 Reliability & Analytics](#-reliability-diagnostics--pause-coordination) • [🎵 Procedural Audio Engine](#-procedural-chiptune-synthesizer) • [🛠️ Getting Started](#-getting-started)
 
 ---
 
@@ -262,10 +265,36 @@ Pixel-Pulse-Rush/
 │   │   ├── __root.tsx                      # Root arcade shell with metadata & fonts
 │   │   └── index.tsx                       # Index route mounting PixelPulseRush
 │   └── styles.css                          # Apple Design System tokens, arcade button deck & neon utilities
-├── bunfig.toml                     # Bun configuration
-├── package.json                    # Project dependencies & scripts
-├── tsconfig.json                   # TypeScript configuration
-└── vite.config.ts                  # Vite & TanStack Router bundler config
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                      # GitHub Actions automated workflow for GitHub Pages
+├── scripts/
+│   └── export-static.mjs                   # Static SSR export generator for GitHub Pages (.nojekyll, relative assets)
+├── bunfig.toml                             # Bun configuration
+├── package.json                            # Project dependencies & scripts
+├── tsconfig.json                           # TypeScript configuration
+└── vite.config.ts                          # Vite & TanStack Router bundler config
+```
+
+---
+
+## 🚀 Live GitHub Pages Deployment
+
+The game is hosted and publicly playable on GitHub Pages:
+
+### 🌐 **Live URL**: [https://rahul08319.github.io/Pixel-Pulse-Rush/](https://rahul08319.github.io/Pixel-Pulse-Rush/)
+
+- **Branch**: `gh-pages`
+- **Automation**: Fully automated on every push to `main` via [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+- **Static Export**: Generates self-contained static HTML (`index.html`, `404.html`, `.nojekyll`) with relative asset bundles (`./assets/`) that run flawlessly on GitHub Pages without server-side dependencies.
+
+To manually rebuild and deploy to GitHub Pages:
+```bash
+# 1. Build and export static assets to dist/
+npm run deploy
+
+# 2. Push dist/ to the gh-pages branch
+npx gh-pages -d dist
 ```
 
 ---
