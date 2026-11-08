@@ -57,6 +57,36 @@ async function exportStatic() {
   // Create .nojekyll so GitHub Pages doesn't ignore files or folders with underscores
   fs.writeFileSync(path.resolve(distDir, ".nojekyll"), "", "utf-8");
 
+  // Write vercel.json and package.json to prevent Vercel preview build failures on gh-pages
+  const vercelConfig = {
+    $schema: "https://openapi.vercel.sh/vercel.json",
+    cleanUrls: true,
+    git: {
+      deploymentEnabled: false,
+    },
+    buildCommand: "echo 'Static arcade assets ready'",
+    outputDirectory: ".",
+  };
+  fs.writeFileSync(
+    path.resolve(distDir, "vercel.json"),
+    JSON.stringify(vercelConfig, null, 2),
+    "utf-8"
+  );
+
+  const ghPagesPackage = {
+    name: "pixel-pulse-rush-arcade-gh-pages",
+    private: true,
+    version: "1.0.0",
+    scripts: {
+      build: "echo 'Static arcade assets ready'",
+    },
+  };
+  fs.writeFileSync(
+    path.resolve(distDir, "package.json"),
+    JSON.stringify(ghPagesPackage, null, 2),
+    "utf-8"
+  );
+
   // Copy favicon.ico if it exists
   const faviconPath = path.resolve(".output/public/favicon.ico");
   if (fs.existsSync(faviconPath)) {
