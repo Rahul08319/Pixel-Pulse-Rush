@@ -1,0 +1,8 @@
+{
+  "name": "pixel-pulse-rush-arcade-gh-pages",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Static arcade assets ready'"
+  }
+}
